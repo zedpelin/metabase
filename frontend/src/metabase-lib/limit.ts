@@ -4,15 +4,21 @@ import {
 } from "cljs/metabase.lib.core";
 import type { Query, Limit } from "./types";
 
-export function currentLimit(query: Query): Limit {
-  return _current_limit(query);
+const DEFAULT_STAGE_INDEX = -1;
+
+export function currentLimit(
+  query: Query,
+  stageIndex = DEFAULT_STAGE_INDEX,
+): Limit {
+  return _current_limit(query, stageIndex);
 }
 
-export function limit(query: Query, limit: Limit): Query {
-  return _limit(query, limit);
-}
+declare function LimitFn(query: Query, limit: Limit): Query;
+declare function LimitFn(query: Query, stageIndex: number, limit: Limit): Query;
 
-export function hasLimit(query: Query) {
-  const limit = currentLimit(query);
+export const limit: typeof LimitFn = _limit;
+
+export function hasLimit(query: Query, stageIndex = DEFAULT_STAGE_INDEX) {
+  const limit = currentLimit(query, stageIndex);
   return typeof limit === "number" && limit > 0;
 }
