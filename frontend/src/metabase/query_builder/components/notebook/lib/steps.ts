@@ -193,7 +193,7 @@ export function getStageSteps(
           ) {
             newQuery = current.query.setSourceQuery(newQuery.query());
           }
-          newQuery = current.clean(newQuery);
+          newQuery = current.clean(newQuery, current.itemIndex);
         }
         // strip empty source queries
         return newQuery.cleanNesting();
@@ -248,7 +248,7 @@ export function getStageSteps(
     }
     // revert the previewQuery for this step
     if (step.revert && previewQuery) {
-      previewQuery = step.revert(previewQuery);
+      previewQuery = step.revert(previewQuery, step.itemIndex);
     }
   }
 
