@@ -32,6 +32,7 @@ function createNotebookStep(opts = {}): INotebookStep {
     stageIndex: 0,
     itemIndex: 0,
     query: DEFAULT_QUERY,
+    topLevelQuery: DEFAULT_QUESTION._getMLv2Query(),
     valid: true,
     active: true,
     visible: true,

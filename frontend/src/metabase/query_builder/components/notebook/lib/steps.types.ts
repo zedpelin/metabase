@@ -1,4 +1,5 @@
 import type { DatasetQuery } from "metabase-types/types/Card";
+import type { Query } from "metabase-lib";
 import type StructuredQuery from "metabase-lib/queries/StructuredQuery";
 import type Question from "metabase-lib/Question";
 
@@ -24,6 +25,7 @@ export interface NotebookStep {
   stageIndex: number;
   itemIndex: number | null;
   query: StructuredQuery;
+  topLevelQuery: Query;
   valid: boolean;
   active: boolean;
   visible: boolean;
