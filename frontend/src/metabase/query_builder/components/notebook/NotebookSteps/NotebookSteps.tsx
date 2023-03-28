@@ -1,7 +1,9 @@
 import React, { useCallback, useMemo, useState } from "react";
 
+import * as Lib from "metabase-lib";
+import StructuredQuery from "metabase-lib/queries/StructuredQuery";
+import type { Query } from "metabase-lib/types";
 import type Question from "metabase-lib/Question";
-import type StructuredQuery from "metabase-lib/queries/StructuredQuery";
 
 import { getQuestionSteps } from "../lib/steps";
 import { NotebookStep as INotebookStep, OpenSteps } from "../lib/steps.types";
@@ -58,16 +60,25 @@ function NotebookSteps({
   }, []);
 
   const handleQueryChange = useCallback(
-    async (step: INotebookStep, query: StructuredQuery) => {
-      const datasetQuery = query.datasetQuery();
-      const updatedQuery = step.update(datasetQuery);
-      await updateQuestion(updatedQuery.question());
+    async (step: INotebookStep, query: StructuredQuery | Query) => {
+      // Performs a query update with either metabase-lib v1 or v2
+      // The StructuredQuery block is temporary and will be removed
+      // once all the notebook steps are using metabase-lib v2
+      if (query instanceof StructuredQuery) {
+        const datasetQuery = query.datasetQuery();
+        const updatedQuery = step.update(datasetQuery);
+        await updateQuestion(updatedQuery.question());
+      } else {
+        const updatedLegacyQuery = Lib.toLegacyQuery(query);
+        const updatedQuestion = question.setDatasetQuery(updatedLegacyQuery);
+        await updateQuestion(updatedQuestion);
+      }
 
       // mark the step as "closed" since we can assume
       // it's been added or removed by the updateQuery
       handleStepClose(step.id);
     },
-    [updateQuestion, handleStepClose],
+    [question, updateQuestion, handleStepClose],
   );
 
   if (!question) {
@@ -79,7 +90,7 @@ function NotebookSteps({
       {steps.map((step, index) => {
         const isLast = index === steps.length - 1;
         const isLastOpened = lastOpenedStep === step.id;
-        const onChange = (query: StructuredQuery) =>
+        const onChange = (query: StructuredQuery | Query) =>
           handleQueryChange(step, query);
 
         return (

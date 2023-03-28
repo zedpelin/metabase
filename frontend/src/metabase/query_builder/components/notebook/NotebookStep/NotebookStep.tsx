@@ -8,6 +8,7 @@ import Icon from "metabase/components/Icon";
 import IconButtonWrapper from "metabase/components/IconButtonWrapper";
 import ExpandingContent from "metabase/components/ExpandingContent";
 
+import type { Query } from "metabase-lib/types";
 import type Question from "metabase-lib/Question";
 import type StructuredQuery from "metabase-lib/queries/StructuredQuery";
 
@@ -44,7 +45,7 @@ interface NotebookStepProps {
   isLastOpened: boolean;
   reportTimezone?: string;
   openStep: (id: string) => void;
-  updateQuery: (query: StructuredQuery) => Promise<void>;
+  updateQuery: (query: StructuredQuery | Query) => Promise<void>;
 }
 
 function NotebookStep({
