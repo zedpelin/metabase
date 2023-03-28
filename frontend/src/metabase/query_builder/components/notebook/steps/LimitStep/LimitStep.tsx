@@ -7,7 +7,7 @@ import type { NotebookStep } from "metabase/query_builder/components/notebook/li
 import * as Lib from "metabase-lib";
 import type { Query } from "metabase-lib/types";
 
-import { NotebookCell } from "../NotebookCell";
+import { NotebookCell } from "../../NotebookCell";
 
 interface LimitStepProps {
   step: NotebookStep;
