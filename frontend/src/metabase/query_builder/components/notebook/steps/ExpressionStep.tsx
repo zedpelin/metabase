@@ -2,7 +2,7 @@ import React from "react";
 
 import ExpressionWidget from "metabase/query_builder/components/expressions/ExpressionWidget";
 
-import { NotebookStepUiComponentProps } from "../lib/steps.types";
+import { NotebookStepUiComponentProps } from "../types";
 import ClauseStep from "./ClauseStep";
 
 const ExpressionStep = ({

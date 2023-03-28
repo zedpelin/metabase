@@ -5,7 +5,7 @@ import LimitInput from "metabase/query_builder/components/LimitInput";
 
 import * as Lib from "metabase-lib";
 
-import { NotebookStepUiComponentProps } from "../../lib/steps.types";
+import { NotebookStepUiComponentProps } from "../../types";
 import { NotebookCell } from "../../NotebookCell";
 
 function LimitStep({ step, color, updateQuery }: NotebookStepUiComponentProps) {

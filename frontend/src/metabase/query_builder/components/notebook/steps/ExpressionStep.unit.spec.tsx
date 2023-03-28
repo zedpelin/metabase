@@ -10,7 +10,7 @@ import {
 } from "metabase-types/api/mocks/presets";
 import { Expression } from "metabase-types/types/Query";
 
-import type { NotebookStepUiComponentProps } from "../lib/steps.types";
+import type { NotebookStepUiComponentProps } from "../types";
 import { createMockNotebookStep } from "../test-utils";
 import ExpressionStep from "./ExpressionStep";
 

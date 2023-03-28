@@ -13,7 +13,7 @@ import SummarizeStep from "../steps/SummarizeStep";
 import SortStep from "../steps/SortStep";
 import LimitStep from "../steps/LimitStep";
 
-import { NotebookStepUiComponentProps } from "../lib/steps.types";
+import { NotebookStepUiComponentProps } from "../types";
 
 export type StepUIItem = {
   title: string;

@@ -9,10 +9,7 @@ import { createSampleDatabase } from "metabase-types/api/mocks/presets";
 
 import type Question from "metabase-lib/Question";
 
-import {
-  NotebookStep as INotebookStep,
-  NotebookStepType,
-} from "../lib/steps.types";
+import { NotebookStep as INotebookStep, NotebookStepType } from "../types";
 import { createMockNotebookStep, DEFAULT_QUESTION } from "../test-utils";
 import NotebookStep from "./NotebookStep";
 

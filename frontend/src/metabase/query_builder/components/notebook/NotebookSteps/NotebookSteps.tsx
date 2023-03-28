@@ -6,7 +6,7 @@ import type { Query } from "metabase-lib/types";
 import type Question from "metabase-lib/Question";
 
 import { getQuestionSteps } from "../lib/steps";
-import { NotebookStep as INotebookStep, OpenSteps } from "../lib/steps.types";
+import { NotebookStep as INotebookStep, OpenSteps } from "../types";
 import NotebookStep from "../NotebookStep";
 import { Container } from "./NotebookSteps.styled";
 
