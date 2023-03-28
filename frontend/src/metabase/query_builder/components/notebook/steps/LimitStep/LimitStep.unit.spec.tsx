@@ -2,42 +2,14 @@ import React from "react";
 import { fireEvent, render, screen } from "__support__/ui";
 
 import * as Lib from "metabase-lib";
-import { getSavedStructuredQuestion } from "metabase-lib/mocks";
-import type StructuredQuery from "metabase-lib/queries/StructuredQuery";
 
-import { NotebookStep as INotebookStep } from "../../lib/steps.types";
+import { createMockNotebookStep, DEFAULT_QUERY } from "../../test-utils";
 import LimitStep from "./LimitStep";
-
-const DEFAULT_QUESTION = getSavedStructuredQuestion();
-const DEFAULT_LEGACY_QUERY = DEFAULT_QUESTION.query() as StructuredQuery;
-const DEFAULT_QUERY = DEFAULT_QUESTION._getMLv2Query();
 
 const DEFAULT_LIMIT = 10;
 const QUERY_WITH_LIMIT = Lib.limit(DEFAULT_QUERY, DEFAULT_LIMIT);
 
-function createNotebookStep(opts = {}): INotebookStep {
-  return {
-    id: "test-step",
-    type: "limit",
-    stageIndex: 0,
-    itemIndex: 0,
-    query: DEFAULT_LEGACY_QUERY,
-    topLevelQuery: DEFAULT_QUERY,
-    valid: true,
-    active: true,
-    visible: true,
-    actions: [],
-    previewQuery: null,
-    next: null,
-    previous: null,
-    revert: jest.fn(),
-    clean: jest.fn(),
-    update: jest.fn(),
-    ...opts,
-  };
-}
-
-function setup(step = createNotebookStep()) {
+function setup(step = createMockNotebookStep()) {
   const updateQuery = jest.fn();
 
   render(<LimitStep step={step} color="brand" updateQuery={updateQuery} />);
@@ -57,7 +29,7 @@ describe("LimitStep", () => {
   });
 
   it("should render correctly with limit set", () => {
-    const step = createNotebookStep({ topLevelQuery: QUERY_WITH_LIMIT });
+    const step = createMockNotebookStep({ topLevelQuery: QUERY_WITH_LIMIT });
     setup(step);
 
     expect(screen.getByDisplayValue(String(DEFAULT_LIMIT))).toBeInTheDocument();
@@ -73,7 +45,7 @@ describe("LimitStep", () => {
   });
 
   it("should update the limit", () => {
-    const step = createNotebookStep({ topLevelQuery: QUERY_WITH_LIMIT });
+    const step = createMockNotebookStep({ topLevelQuery: QUERY_WITH_LIMIT });
     const { getNextQuery } = setup(step);
     const limitInput = screen.getByPlaceholderText("Enter a limit");
 
@@ -83,7 +55,7 @@ describe("LimitStep", () => {
   });
 
   it("shouldn't update the limit if zero provided", () => {
-    const step = createNotebookStep({ topLevelQuery: QUERY_WITH_LIMIT });
+    const step = createMockNotebookStep({ topLevelQuery: QUERY_WITH_LIMIT });
     const { updateQuery } = setup(step);
     const limitInput = screen.getByPlaceholderText("Enter a limit");
 
@@ -93,7 +65,7 @@ describe("LimitStep", () => {
   });
 
   it("shouldn't update the limit if its negative", () => {
-    const step = createNotebookStep({ topLevelQuery: QUERY_WITH_LIMIT });
+    const step = createMockNotebookStep({ topLevelQuery: QUERY_WITH_LIMIT });
     const { updateQuery } = setup(step);
     const limitInput = screen.getByPlaceholderText("Enter a limit");
 
