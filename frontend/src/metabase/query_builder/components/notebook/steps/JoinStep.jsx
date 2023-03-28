@@ -46,18 +46,20 @@ const stepShape = {
   id: PropTypes.string.isRequired,
   type: PropTypes.string.isRequired,
   query: PropTypes.object.isRequired,
+  topLevelQuery: PropTypes.object.isRequired,
   previewQuery: PropTypes.object,
+  active: PropTypes.bool.isRequired,
   valid: PropTypes.bool.isRequired,
   visible: PropTypes.bool.isRequired,
   stageIndex: PropTypes.number.isRequired,
-  itemIndex: PropTypes.number.isRequired,
+  itemIndex: PropTypes.number,
   update: PropTypes.func.isRequired,
   revert: PropTypes.func.isRequired,
   clean: PropTypes.func.isRequired,
   actions: PropTypes.array.isRequired,
+  next: PropTypes.object,
+  previous: PropTypes.object,
 };
-stepShape.previous = PropTypes.shape(stepShape);
-stepShape.next = PropTypes.shape(stepShape);
 
 const joinStepPropTypes = {
   query: PropTypes.object.isRequired,

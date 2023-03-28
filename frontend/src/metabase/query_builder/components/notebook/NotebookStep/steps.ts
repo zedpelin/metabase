@@ -13,6 +13,8 @@ import SummarizeStep from "../steps/SummarizeStep";
 import SortStep from "../steps/SortStep";
 import LimitStep from "../steps/LimitStep";
 
+import { NotebookStepUiComponentProps } from "../lib/steps.types";
+
 export type StepUIItem = {
   title: string;
   icon?: string;
@@ -22,7 +24,7 @@ export type StepUIItem = {
   getColor: () => string;
 
   // Remove any once all step components are typed
-  component: React.ComponentType<any>;
+  component: React.ComponentType<NotebookStepUiComponentProps>;
 };
 
 export const STEP_UI: Record<string, StepUIItem> = {
@@ -34,7 +36,7 @@ export const STEP_UI: Record<string, StepUIItem> = {
   join: {
     title: t`Join data`,
     icon: "join_left_outer",
-    component: JoinStep,
+    component: JoinStep as React.ComponentType<NotebookStepUiComponentProps>,
     priority: 1,
     getColor: () => color("brand"),
   },

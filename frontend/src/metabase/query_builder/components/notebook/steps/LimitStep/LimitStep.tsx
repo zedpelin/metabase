@@ -2,20 +2,13 @@ import React from "react";
 import { t } from "ttag";
 
 import LimitInput from "metabase/query_builder/components/LimitInput";
-import type { NotebookStep } from "metabase/query_builder/components/notebook/lib/steps.types";
 
 import * as Lib from "metabase-lib";
-import type { Query } from "metabase-lib/types";
 
+import { NotebookStepUiComponentProps } from "../../lib/steps.types";
 import { NotebookCell } from "../../NotebookCell";
 
-interface LimitStepProps {
-  step: NotebookStep;
-  color: string;
-  updateQuery: (query: Query) => void;
-}
-
-function LimitStep({ step, color, updateQuery }: LimitStepProps) {
+function LimitStep({ step, color, updateQuery }: NotebookStepUiComponentProps) {
   const { topLevelQuery: query, stageIndex } = step;
 
   const limit = Lib.currentLimit(query, step.stageIndex);

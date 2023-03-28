@@ -47,13 +47,13 @@ export interface NotebookStepAction {
 }
 
 export interface NotebookStepUiComponentProps {
-  color: string;
   step: NotebookStep;
   query: StructuredQuery;
-  sourceQuestion: Question | undefined;
-  updateQuery: (query: StructuredQuery) => Promise<void>;
+  color: string;
   isLastOpened: boolean;
-  reportTimezone: string;
+  reportTimezone?: string;
+  sourceQuestion?: Question;
+  updateQuery: (query: StructuredQuery | Query) => Promise<void>;
 }
 
 export type OpenSteps = Record<NotebookStep["id"], boolean>;

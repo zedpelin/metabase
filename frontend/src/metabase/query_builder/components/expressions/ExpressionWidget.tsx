@@ -31,7 +31,7 @@ export interface ExpressionWidgetProps {
   expression: Expression | undefined;
   name: string | undefined;
 
-  reportTimezone: string;
+  reportTimezone?: string;
 
   onChangeExpression: (name: string, expression: Expression) => void;
   onRemoveExpression?: (name: string) => void;

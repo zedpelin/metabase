@@ -3,7 +3,11 @@ import { fireEvent, render, screen } from "__support__/ui";
 
 import * as Lib from "metabase-lib";
 
-import { createMockNotebookStep, DEFAULT_QUERY } from "../../test-utils";
+import {
+  createMockNotebookStep,
+  DEFAULT_QUERY,
+  DEFAULT_LEGACY_QUERY,
+} from "../../test-utils";
 import LimitStep from "./LimitStep";
 
 const DEFAULT_LIMIT = 10;
@@ -12,7 +16,15 @@ const QUERY_WITH_LIMIT = Lib.limit(DEFAULT_QUERY, DEFAULT_LIMIT);
 function setup(step = createMockNotebookStep()) {
   const updateQuery = jest.fn();
 
-  render(<LimitStep step={step} color="brand" updateQuery={updateQuery} />);
+  render(
+    <LimitStep
+      step={step}
+      query={DEFAULT_LEGACY_QUERY}
+      color="brand"
+      isLastOpened={false}
+      updateQuery={updateQuery}
+    />,
+  );
 
   function getNextQuery() {
     const [lastCall] = updateQuery.mock.calls.slice(-1);
