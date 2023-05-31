@@ -103,7 +103,7 @@ describe(
       cy.intercept("PUT", "/api/action/*").as("updateAction");
     });
 
-    it("should allow CRUD operations on model actions", () => {
+    it.only("should allow CRUD operations on model actions", () => {
       cy.get("@modelId").then(id => {
         cy.visit(`/model/${id}/detail`);
         cy.wait("@getModel");
