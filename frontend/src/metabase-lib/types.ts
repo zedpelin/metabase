@@ -154,6 +154,10 @@ export type ExternalOp = {
   args: ExpressionArg[];
 };
 
+export type JoinExternalOp = ExternalOp & {
+  args: [ColumnMetadata, ColumnMetadata];
+};
+
 declare const Join: unique symbol;
 export type Join = unknown & { _opaque: typeof Join };
 
