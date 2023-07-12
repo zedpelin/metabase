@@ -38,10 +38,16 @@ export type OrderByDirection = "asc" | "desc";
 declare const FilterClause: unique symbol;
 export type FilterClause = unknown & { _opaque: typeof FilterClause };
 
+declare const JoinConditionClause: unique symbol;
+export type JoinConditionClause = unknown & {
+  _opaque: typeof JoinConditionClause;
+};
+
 export type Clause =
   | AggregationClause
   | BreakoutClause
   | FilterClause
+  | JoinConditionClause
   | OrderByClause;
 
 export type Limit = number | null;
@@ -154,7 +160,7 @@ export type ExternalOp = {
   args: ExpressionArg[];
 };
 
-export type JoinExternalOp = ExternalOp & {
+export type JoinConditionExternalOp = ExternalOp & {
   args: [ColumnMetadata, ColumnMetadata];
 };
 

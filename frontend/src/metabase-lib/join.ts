@@ -3,10 +3,10 @@ import * as ML from "cljs/metabase.lib.js";
 import type {
   CardMetadata,
   ColumnMetadata,
-  ExternalOp,
-  FilterClause,
   FilterOperator,
   Join,
+  JoinConditionClause,
+  JoinConditionExternalOp,
   JoinStrategy,
   Query,
   TableMetadata,
@@ -22,9 +22,17 @@ export function joins(query: Query, stageIndex: number): Join[] {
 
 export function joinClause(
   joinable: Joinable,
-  conditions: FilterClause[] | ExternalOp[],
+  conditions: JoinConditionClause[] | JoinConditionExternalOp[],
 ): Join {
   return ML.join_clause(joinable, conditions);
+}
+
+export function joinConditionClause(
+  filterOperator: FilterOperator,
+  lhsColumn: ColumnMetadata,
+  rhsColumn: ColumnMetadata,
+): JoinConditionClause {
+  return ML.filter_clause(filterOperator, lhsColumn, rhsColumn);
 }
 
 export function join(query: Query, stageIndex: number, join: Join): Query {
@@ -46,13 +54,13 @@ export function withJoinStrategy(join: Join, strategy: JoinStrategy): Join {
   return ML.with_join_strategy(join, strategy);
 }
 
-export function joinConditions(join: Join): FilterClause[] {
+export function joinConditions(join: Join): JoinConditionClause[] {
   return ML.join_conditions(join);
 }
 
 export function withJoinConditions(
   join: Join,
-  newConditions: FilterClause[] | ExternalOp[],
+  newConditions: JoinConditionClause[] | JoinConditionExternalOp[],
 ): Join {
   return ML.with_join_conditions(join, newConditions);
 }
@@ -107,7 +115,7 @@ export function suggestedJoinCondition(
   query: Query,
   stageIndex: number,
   joinable: Joinable,
-): FilterClause | null {
+): JoinConditionClause | null {
   return ML.suggested_join_condition(query, stageIndex, joinable);
 }
 
