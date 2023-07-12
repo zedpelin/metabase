@@ -68,6 +68,8 @@ export type TableDisplayInfo = {
   isImplicitlyJoinable: boolean;
 };
 
+export type CardDisplayInfo = TableDisplayInfo;
+
 type TableInlineDisplayInfo = Pick<
   TableDisplayInfo,
   "name" | "displayName" | "isSourceTable"
