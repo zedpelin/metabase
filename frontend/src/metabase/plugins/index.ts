@@ -24,11 +24,11 @@ import type {
   UserListResult,
 } from "metabase-types/api";
 import type { AdminPathKey, State } from "metabase-types/store";
-import { ADMIN_SETTINGS_SECTIONS } from "metabase/admin/settings/selectors";
+import type { ADMIN_SETTINGS_SECTIONS } from "metabase/admin/settings/selectors";
 import type Question from "metabase-lib/Question";
 
 import type Database from "metabase-lib/metadata/Database";
-import { GetAuthProviders, PluginGroupManagersType } from "./types";
+import type { GetAuthProviders, PluginGroupManagersType } from "./types";
 
 // functions called when the application is started
 export const PLUGIN_APP_INIT_FUCTIONS = [];
@@ -118,8 +118,9 @@ export const PLUGIN_AUTH_PROVIDERS: GetAuthProviders[] = [];
 export const PLUGIN_IS_PASSWORD_USER: ((user: User) => boolean)[] = [];
 
 // selectors that customize behavior between app versions
-export const PLUGIN_SELECTORS = {
+export const PLUGIN_WHITELABEL = {
   canWhitelabel: (_state: State) => false,
+  getWhitelabelMessage: (text: string) => text,
   getLoadingMessage: (_state: State) => t`Doing science...`,
   getIsWhiteLabeling: (_state: State) => false,
 };

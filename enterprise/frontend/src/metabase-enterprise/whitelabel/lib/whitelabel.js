@@ -16,10 +16,6 @@ function colorScheme() {
   return { ...originalColors, ...MetabaseSettings.get("application-colors") };
 }
 
-function applicationName() {
-  return MetabaseSettings.get("application-name");
-}
-
 function walkStyleSheets(sheets, fn) {
   for (const sheet of sheets) {
     let rules = [];
@@ -168,26 +164,9 @@ export function updateColors() {
 
 // APPLICATION NAME
 
-function replaceApplicationName(string) {
-  return string.replace(/Metabase/g, applicationName());
-}
-
-export function enabledApplicationNameReplacement() {
-  const c3po = require("ttag");
-  const _t = c3po.t;
-  const _jt = c3po.jt;
-  const _ngettext = c3po.ngettext;
-  c3po.t = (...args) => {
-    return replaceApplicationName(_t(...args));
-  };
-  c3po.ngettext = (...args) => {
-    return replaceApplicationName(_ngettext(...args));
-  };
-  c3po.jt = (...args) => {
-    return _jt(...args).map(element =>
-      typeof element === "string" ? replaceApplicationName(element) : element,
-    );
-  };
+export function getWhitelabelMessage(text) {
+  const applicationName = MetabaseSettings.get("application-name");
+  return text.replace(/Metabase/g, applicationName);
 }
 
 // Update the JS colors to ensure components that use a color statically get the

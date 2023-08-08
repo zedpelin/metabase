@@ -9,7 +9,7 @@ import Select from "metabase/core/components/Select";
 import Toggle from "metabase/core/components/Toggle";
 import { useUniqueId } from "metabase/hooks/use-unique-id";
 import MetabaseSettings from "metabase/lib/settings";
-import { PLUGIN_SELECTORS } from "metabase/plugins";
+import { PLUGIN_WHITELABEL } from "metabase/plugins";
 
 import {
   StyleContainer,
@@ -26,7 +26,7 @@ const THEME_OPTIONS = [
 ];
 
 const mapStateToProps = state => ({
-  canWhitelabel: PLUGIN_SELECTORS.canWhitelabel(state),
+  canWhitelabel: PLUGIN_WHITELABEL.canWhitelabel(state),
 });
 
 const DisplayOptionsPane = ({

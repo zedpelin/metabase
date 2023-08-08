@@ -4,7 +4,7 @@ import {
   PLUGIN_LANDING_PAGE,
   PLUGIN_LOGO_ICON_COMPONENTS,
   PLUGIN_ADMIN_SETTINGS_UPDATES,
-  PLUGIN_SELECTORS,
+  PLUGIN_WHITELABEL,
 } from "metabase/plugins";
 
 import { hasPremiumFeature } from "metabase-enterprise/settings";
@@ -21,10 +21,7 @@ import LighthouseToggleWidget from "./components/LighthouseToggleWidget";
 import MetabotToggleWidget from "./components/MetabotToggleWidget";
 import LogoUpload from "./components/LogoUpload";
 import LogoIcon from "./components/LogoIcon";
-import {
-  updateColors,
-  enabledApplicationNameReplacement,
-} from "./lib/whitelabel";
+import { updateColors } from "./lib/whitelabel";
 import { getLoadingMessageOptions } from "./lib/loading-message";
 
 if (hasPremiumFeature("whitelabel")) {
@@ -103,12 +100,10 @@ if (hasPremiumFeature("whitelabel")) {
     MetabaseSettings.on("application-colors", updateColors);
   });
 
-  enabledApplicationNameReplacement();
-
   PLUGIN_LOGO_ICON_COMPONENTS.push(LogoIcon);
-  PLUGIN_SELECTORS.canWhitelabel = () => true;
+  PLUGIN_WHITELABEL.canWhitelabel = () => true;
 
   // these selectors control whitelabeling UI
-  PLUGIN_SELECTORS.getLoadingMessage = getLoadingMessage;
-  PLUGIN_SELECTORS.getIsWhiteLabeling = getIsWhiteLabeling;
+  PLUGIN_WHITELABEL.getLoadingMessage = getLoadingMessage;
+  PLUGIN_WHITELABEL.getIsWhiteLabeling = getIsWhiteLabeling;
 }
