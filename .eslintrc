@@ -27,33 +27,7 @@
           "orderImportKind": "asc",
           "caseInsensitive": false
         },
-        "warnOnUnassignedImports": true,
-        "pathGroups": [
-          {
-            "pattern": "react",
-            "group": "builtin",
-            "position": "before"
-          },
-          {
-            "pattern": "metabase/**",
-            "group": "internal"
-          },
-          {
-            "pattern": "metabase/**/components",
-            "group": "internal",
-            "position": "before"
-          },
-          {
-            "pattern": "__**",
-            "group": "internal",
-            "position": "before"
-          },
-          {
-            "pattern": "metabase-lib/**",
-            "group": "internal",
-            "position": "after"
-          }
-        ],
+        "warnOnUnassignedImports": false,
         "groups": [
           "builtin",
           "external",
