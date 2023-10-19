@@ -23,9 +23,10 @@ import {
   getTabsOverrides,
   getTextareaOverrides,
   getTextInputOverrides,
-  getTimeInputOverrides,
   getTextOverrides,
+  getTimeInputOverrides,
   getTitleOverrides,
+  getTooltipOverrides,
 } from "./components";
 
 type ThemeColors = MantineTheme["colors"]["brand"];
@@ -131,9 +132,9 @@ export const getThemeOverrides = (): MantineThemeOverride => ({
     ...getTabsOverrides(),
     ...getTextareaOverrides(),
     ...getTextInputOverrides(),
-    ...getTimeInputOverrides(),
     ...getTextOverrides(),
     ...getTimeInputOverrides(),
     ...getTitleOverrides(),
+    ...getTooltipOverrides(),
   },
 });
