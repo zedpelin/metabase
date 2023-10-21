@@ -35,12 +35,12 @@ runs:
             }
 
             const artifactName = `metabase-${{ inputs.edition }}-${commit}-uberjar`;
-
+            console.log(artifactName);
             const downloadResponse = await artifactClient.downloadArtifact(artifactName);
             console.log(downloadResponse)
           }
 
-          const currentCommit = "${{ github.event.pull_request.head.sha || github.sha }}";
+          const currentCommit = "8808c728ca643d9f9f2a97b1cba58eb6033f48e8";
           getArtifact(currentCommit);
 
     - name: Unzip Metabase artifact containing an uberjar
