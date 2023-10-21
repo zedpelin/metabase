@@ -13,7 +13,7 @@ jobs:
         with:
           # Important in case we need to download uberjar from previous commits!
           fetch-depth: 20
-
+      - run: yarn add -D @actions/artifact
       - name: Download Metabase ee uberjar
         uses: ./.github/actions/e2e-download-uberjar
         with:
