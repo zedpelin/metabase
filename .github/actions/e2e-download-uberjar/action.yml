@@ -14,6 +14,8 @@ runs:
         script: | # js
           const fs = require('fs');
           const execSync = require("child_process").execSync;
+          const artifact = require('@actions/artifact');
+          const artifactClient = artifact.create();
 
           const getCommit = (ref = "HEAD") => {
             const [commit] = execSync(`git rev-parse ${ref}`, { encoding: "utf8" }).split(
@@ -34,36 +36,12 @@ runs:
 
             const artifactName = `metabase-${{ inputs.edition }}-${commit}-uberjar`;
 
-            const {
-              data: { artifacts },
-            } = await github.rest.actions.listArtifactsForRepo({
-              ...baseConfig,
-              name: artifactName,
-              per_page: 1,
-            });
-
-            const [artifact] = artifacts;
-
-            if (!artifact) {
-              const parentCommit = getCommit(`${commit}^`);
-              console.log(`Didn't find ${artifactName}.\n`);
-              console.log(`Switching to the parent commit: ${parentCommit}`);
-              return getArtifact(parentCommit, depth + 1);
-            } else {
-              return artifact;
-            }
+            const downloadResponse = await artifactClient.downloadArtifact(artifactName);
+            console.log(downloadResponse)
           }
 
           const currentCommit = "${{ github.event.pull_request.head.sha || github.sha }}";
-          const { id } = await getArtifact(currentCommit);
-
-          const download = await github.rest.actions.downloadArtifact({
-            ...baseConfig,
-            artifact_id: id,
-            archive_format: 'zip',
-          });
-
-          fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/mb.zip`, Buffer.from(download.data));
+          getArtifact(currentCommit);
 
     - name: Unzip Metabase artifact containing an uberjar
       run: unzip mb.zip
