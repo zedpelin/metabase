@@ -1,5 +1,6 @@
 import type { Drill } from "metabase/visualizations/types/click-actions";
 import type { DrillThruType } from "metabase-lib";
+import { QuickFilterDrill } from "../drills/mlv2/QuickFilterDrill";
 import { SummarizeColumnDrill } from "../drills/mlv2/SummarizeColumnDrill";
 import { FKFilterDrill } from "../drills/mlv2/FKFilterDrill";
 import { SummarizeColumnByTimeDrill } from "../drills/mlv2/SummarizeColumnByTimeDrill";
@@ -29,7 +30,7 @@ export const DRILL_TYPE_TO_HANDLER_MAP: Record<
   Drill<any> | null
 > = {
   "drill-thru/column-filter": null, // ColumnFilterDrill,
-  "drill-thru/quick-filter": null, // QuickFilterDrill,
+  "drill-thru/quick-filter": QuickFilterDrill,
   "drill-thru/pk": null, // PKDetailsDrill,
   "drill-thru/zoom": null, // ZoomToRowDrill,
   "drill-thru/fk-details": null, // FKDetailsDrill,
