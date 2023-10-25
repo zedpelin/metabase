@@ -5,7 +5,7 @@ import ReactDOM from "react-dom";
 import { t } from "ttag";
 import cx from "classnames";
 import Tooltip from "metabase/core/components/Tooltip";
-import styles from "./Legend.css";
+const styles = {};
 
 import LegendItem from "./LegendItem";
 

@@ -5,7 +5,7 @@ import cx from "classnames";
 import { getAccentColors } from "metabase/lib/colors/groups";
 import { Icon } from "metabase/core/components/Icon";
 import ExplicitSize from "../../components/ExplicitSize";
-import styles from "./Legend.css";
+const styles = {};
 import { AddSeriesIcon, LegendHeaderItem } from "./LegendHeader.styled";
 
 const DEFAULT_COLORS = getAccentColors();

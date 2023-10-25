@@ -8,8 +8,6 @@ import _ from "underscore";
 import cx from "classnames";
 import { Grid, ScrollSync } from "react-virtualized";
 
-import "./TableInteractive.css";
-
 import { Icon } from "metabase/core/components/Icon";
 import ExternalLink from "metabase/core/components/ExternalLink";
 import Button from "metabase/core/components/Button";
