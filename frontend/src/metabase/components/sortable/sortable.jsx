@@ -6,7 +6,6 @@ import {
   SortableElement,
   SortableHandle,
 } from "react-sortable-hoc";
-import "./sortable.css";
 
 const SortableContainerWrapper = styled.div`
   user-select: none;

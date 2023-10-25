@@ -38,7 +38,6 @@ import {
   Footer,
   ActionButtonsContainer,
 } from "./EmbedFrame.styled";
-import "./EmbedFrame.css";
 
 type ParameterValues = Record<ParameterId, ParameterValueOrArray>;
 

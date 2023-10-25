@@ -10,7 +10,6 @@ import {
   getFirstDayOfWeekIndex,
 } from "metabase/lib/date-time";
 
-import "./Calendar.css";
 import { CalendarDay, CalendarIconContainer } from "./Calendar.styled";
 
 export type SelectAll = "after" | "before";

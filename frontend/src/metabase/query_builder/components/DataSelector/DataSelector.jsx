@@ -42,8 +42,6 @@ import {
   TableSearchContainer,
 } from "./DataSelector.styled";
 
-import "./DataSelector.css";
-
 const MIN_SEARCH_LENGTH = 2;
 
 // chooses a data source bucket (datasets / raw data (tables) / saved questions)

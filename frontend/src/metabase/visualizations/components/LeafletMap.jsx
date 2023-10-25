@@ -2,7 +2,6 @@
 import { createRef, Component } from "react";
 
 import "leaflet/dist/leaflet.css";
-import "./LeafletMap.css";
 
 import L from "leaflet";
 import "leaflet-draw";
