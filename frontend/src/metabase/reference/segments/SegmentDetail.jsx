@@ -28,7 +28,7 @@ import {
   getIsFormulaExpanded,
 } from "../selectors";
 
-import S from "../components/Detail.css";
+const S = {};
 
 const interestingQuestions = (table, segment) => {
   return [

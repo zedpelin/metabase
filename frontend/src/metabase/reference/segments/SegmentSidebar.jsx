@@ -9,7 +9,7 @@ import MetabaseSettings from "metabase/lib/settings";
 import Breadcrumbs from "metabase/components/Breadcrumbs";
 import SidebarItem from "metabase/components/SidebarItem";
 
-import S from "metabase/components/Sidebar.css";
+const S = {};
 
 const SegmentSidebar = ({ segment, user, style, className }) => (
   <div className={cx(S.sidebar, className)} style={style}>

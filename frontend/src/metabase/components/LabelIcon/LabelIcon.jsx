@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 
 import cx from "classnames";
 import { Icon } from "metabase/core/components/Icon";
-import S from "./LabelIcon.css";
+const S = {};
 
 const LabelIcon = ({ icon, size = 16, className, style }) =>
   icon.charAt(0) === "#" ? (

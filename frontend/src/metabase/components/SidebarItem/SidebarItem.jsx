@@ -2,7 +2,7 @@
 import { memo } from "react";
 import PropTypes from "prop-types";
 import { Link } from "react-router";
-import S from "../Sidebar.css";
+const S = {};
 
 import LabelIcon from "../LabelIcon";
 

@@ -5,8 +5,8 @@ import { connect } from "react-redux";
 import { t } from "ttag";
 import _ from "underscore";
 
-import S from "metabase/components/List/List.css";
-import R from "metabase/reference/Reference.css";
+const S = {};
+const R = {};
 
 import List from "metabase/components/List";
 import ListItem from "metabase/components/ListItem";

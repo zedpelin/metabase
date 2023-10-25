@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 import { Link } from "react-router";
 import { t } from "ttag";
 import cx from "classnames";
-import S from "./Detail.css";
+const S = {};
 
 const Detail = ({
   name,

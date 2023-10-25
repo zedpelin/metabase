@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { t } from "ttag";
 import { getIn } from "icepick";
 
-import S from "metabase/components/List/List.css";
+const S = {};
 
 import * as metadataActions from "metabase/redux/metadata";
 import { assignUserColors } from "metabase/lib/formatting";

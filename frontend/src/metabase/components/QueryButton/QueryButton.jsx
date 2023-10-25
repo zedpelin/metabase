@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import cx from "classnames";
 
 import { Icon } from "metabase/core/components/Icon";
-import S from "./QueryButton.css";
+const S = {};
 
 const QueryButton = ({ className, text, icon, iconClass, onClick, link }) => (
   <div className={className}>

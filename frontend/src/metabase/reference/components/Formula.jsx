@@ -9,7 +9,7 @@ import { Icon } from "metabase/core/components/Icon";
 
 import QueryDefinition from "metabase/query_builder/components/QueryDefinition";
 import { fetchTableMetadata } from "metabase/redux/metadata";
-import S from "./Formula.css";
+const S = {};
 
 const mapDispatchToProps = {
   fetchTableMetadata,

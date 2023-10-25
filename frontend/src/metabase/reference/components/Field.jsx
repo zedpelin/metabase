@@ -7,11 +7,11 @@ import { getIn } from "icepick";
 import cx from "classnames";
 import * as MetabaseCore from "metabase/lib/core";
 
-import S from "metabase/components/List/List.css";
+const S = {};
 import Select from "metabase/core/components/Select";
 import { Icon } from "metabase/core/components/Icon";
 import { isTypeFK } from "metabase-lib/types/utils/isa";
-import F from "./Field.css";
+const F = {};
 
 const Field = ({ field, foreignKeys, url, icon, isEditing, formField }) => (
   <div className={cx(S.item, "pt1", "border-top")}>
