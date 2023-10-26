@@ -1,4 +1,6 @@
-import { restore, openQuestionActions } from "e2e/support/helpers";
+import { restore, openQuestionActions, popover } from "e2e/support/helpers";
+
+const renamedColumn = "Foo";
 
 describe("issue 22517", () => {
   beforeEach(() => {
@@ -11,52 +13,52 @@ describe("issue 22517", () => {
     cy.createNativeQuestion(
       {
         name: "22517",
-        native: { query: `select * from orders` },
+        native: { query: `select * from orders limit 5` },
         dataset: true,
       },
       { visitQuestion: true },
     );
 
     openQuestionActions();
-    // eslint-disable-next-line no-unscoped-text-selectors -- deprecated usage
-    cy.findByText("Edit metadata").click();
+    popover().findByText("Edit metadata").should("be.visible").click();
 
-    renameColumn("ID", "Foo");
+    renameColumn("ID", renamedColumn);
 
-    cy.button("Save changes").click();
+    cy.findByTestId("dataset-edit-bar").button("Save changes").click();
     cy.wait("@updateMetadata");
   });
 
-  it("adding or removging a column should not drop previously edited metadata (metabase#22517)", () => {
+  it("adding or removing a column should not drop previously edited metadata (metabase#22517)", () => {
     openQuestionActions();
-    // eslint-disable-next-line no-unscoped-text-selectors -- deprecated usage
-    cy.findByText("Edit query definition").click();
+    popover().findByText("Edit query definition").should("be.visible").click();
 
-    // Make sure previous metadata changes are reflected in the UI
-    // eslint-disable-next-line no-unscoped-text-selectors -- deprecated usage
-    cy.findByText("Foo");
+    cy.log("Make sure previous metadata changes are reflected in the UI.");
+    cy.findAllByTestId("header-cell")
+      .first()
+      .should("have.text", renamedColumn);
 
     // This will edit the original query and add the `SIZE` column
     // Updated query: `select *, case when quantity > 4 then 'large' else 'small' end size from orders`
     cy.get(".ace_content").type(
-      "{leftarrow}".repeat(" from orders".length) +
+      "{leftarrow}".repeat(" from orders limit 5".length) +
         ", case when quantity > 4 then 'large' else 'small' end size ",
     );
 
     cy.findByTestId("native-query-editor-container").icon("play").click();
     cy.wait("@dataset");
 
-    // eslint-disable-next-line no-unscoped-text-selectors -- deprecated usage
-    cy.findByText("Foo");
+    cy.findAllByTestId("header-cell")
+      .first()
+      .should("have.text", renamedColumn);
 
-    // eslint-disable-next-line no-unscoped-text-selectors -- deprecated usage
-    cy.findByText("Save changes").click();
+    cy.findByTestId("dataset-edit-bar").button("Save changes").click();
 
-    // eslint-disable-next-line no-unscoped-text-selectors -- deprecated usage
-    cy.findByText("Foo");
+    cy.findAllByTestId("header-cell")
+      .first()
+      .should("have.text", renamedColumn);
   });
 });
 
 function renameColumn(column, newName) {
-  cy.findByDisplayValue(column).clear().type(newName).blur();
+  cy.findByDisplayValue(column).clear().type(newName).realPress("Tab");
 }
