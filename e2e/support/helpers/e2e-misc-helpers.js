@@ -261,6 +261,7 @@ export function saveQuestion(
       cy.findByLabelText("Name").clear().type(name);
     }
     cy.button("Save").click();
+    cy.findByLabelText("Name", { timeout: 10000 }).should("not.exist");
   });
 
   cy.wait("@saveQuestion").then(({ response: { body } }) => {
@@ -269,9 +270,7 @@ export function saveQuestion(
     }
   });
 
-  modal().within(() => {
-    cy.button("Not now").click();
-  });
+  modal().icon("close").click();
 }
 
 export function saveSavedQuestion() {
