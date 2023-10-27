@@ -26,7 +26,6 @@ import { getMode } from "metabase/visualizations/click-actions/lib/modes";
 import { checkNotNull } from "metabase/core/utils/types";
 import type {
   DatasetQuery,
-  Filter,
   Series,
   StructuredDatasetQuery,
 } from "metabase-types/api";
@@ -486,11 +485,24 @@ describe("ClickActionsPopover", function () {
           cellValue: ORDERS_ROW_VALUES.TOTAL,
           drillTitle: ">",
           expectedCard: {
-            dataset_query: getQuickFilterResultDatasetQuery({
-              filteredColumnId: ORDERS.TOTAL,
-              filterOperator: ">",
-              cellValue: ORDERS_ROW_VALUES.TOTAL,
-            }),
+            dataset_query: {
+              database: SAMPLE_DB_ID,
+              query: {
+                filter: [
+                  ">",
+                  [
+                    "field",
+                    ORDERS.TOTAL,
+                    {
+                      "base-type": "type/Float",
+                    },
+                  ],
+                  ORDERS_ROW_VALUES.TOTAL,
+                ],
+                "source-table": ORDERS_ID,
+              },
+              type: "query",
+            },
             display: "table",
           },
         },
@@ -501,11 +513,22 @@ describe("ClickActionsPopover", function () {
           cellValue: ORDERS_ROW_VALUES.CREATED_AT,
           drillTitle: "Before",
           expectedCard: {
-            dataset_query: getQuickFilterResultDatasetQuery({
-              filteredColumnId: ORDERS.CREATED_AT,
-              filterOperator: "<",
-              cellValue: ORDERS_ROW_VALUES.CREATED_AT,
-            }),
+            dataset_query: {
+              database: SAMPLE_DB_ID,
+              query: {
+                filter: [
+                  "<",
+                  [
+                    "field",
+                    ORDERS.CREATED_AT,
+                    { "base-type": "type/DateTime" },
+                  ],
+                  ORDERS_ROW_VALUES.CREATED_AT,
+                ],
+                "source-table": ORDERS_ID,
+              },
+              type: "query",
+            },
             display: "table",
           },
         },
@@ -516,11 +539,23 @@ describe("ClickActionsPopover", function () {
           cellValue: null,
           drillTitle: "=",
           expectedCard: {
-            dataset_query: getQuickFilterResultDatasetQuery({
-              filteredColumnId: ORDERS.DISCOUNT,
-              filterOperator: "is-null",
-              cellValue: null,
-            }),
+            dataset_query: {
+              database: SAMPLE_DB_ID,
+              query: {
+                filter: [
+                  "is-null",
+                  [
+                    "field",
+                    ORDERS.DISCOUNT,
+                    {
+                      "base-type": "type/Float",
+                    },
+                  ],
+                ],
+                "source-table": ORDERS_ID,
+              },
+              type: "query",
+            },
             display: "table",
           },
         },
@@ -716,33 +751,6 @@ function getFKFilteredResultDatasetQuery(
         ],
         cellValue,
       ],
-      "source-table": ORDERS_ID,
-    },
-    type: "query",
-  };
-}
-
-function getQuickFilterResultDatasetQuery({
-  filteredColumnId,
-  filterOperator,
-  cellValue,
-}: {
-  filteredColumnId: number;
-  filterOperator: "=" | "!=" | ">" | "<" | "is-null" | "not-null";
-  cellValue: string | number | null | undefined;
-}): DatasetQuery {
-  const filterClause = ["is-null", "not-null"].includes(filterOperator)
-    ? ([filterOperator, ["field", filteredColumnId, null]] as Filter)
-    : ([
-        filterOperator,
-        ["field", filteredColumnId, null],
-        cellValue,
-      ] as Filter);
-
-  return {
-    database: SAMPLE_DB_ID,
-    query: {
-      filter: filterClause,
       "source-table": ORDERS_ID,
     },
     type: "query",
