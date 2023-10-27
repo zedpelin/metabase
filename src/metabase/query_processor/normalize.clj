@@ -19,12 +19,10 @@
   [query :- [:map [:database ::lib.schema.id/database]]]
   (case (query-type query)
     :mbql/query
-    (lib.normalize/normalize query)
+    (lib.convert/->legacy-MBQL (lib.normalize/normalize query))
 
     (:native :query)
-    (-> query
-        mbql.normalize/normalize
-        lib.convert/->pMBQL)
+    (mbql.normalize/normalize query)
 
     :else
     (throw (ex-info "Invalid query: unknown type"

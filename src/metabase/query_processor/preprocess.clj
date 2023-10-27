@@ -51,14 +51,6 @@
   [query]
   query)
 
-(defn- ^:deprecated legacy-middleware [f]
-  (fn [mlv2-query]
-    (let [legacy-query (lib.convert/->legacy-MBQL mlv2-query)
-          legacy-query' (f legacy-query)]
-      (if (= legacy-query legacy-query')
-        mlv2-query
-        (lib/query mlv2-query (lib.convert/->pMBQL legacy-query'))))))
-
 (def ^:private middleware
   "Pre-processing middleware. Has the form
 
@@ -69,38 +61,38 @@
    #'qp.perms/remove-permissions-key
    #'validate/validate-query
    #'qp.constraints/add-default-userland-constraints
-   (legacy-middleware #'expand-macros/expand-macros)
-   (legacy-middleware #'qp.resolve-referenced/resolve-referenced-card-resources)
-   (legacy-middleware #'parameters/substitute-parameters)
-   (legacy-middleware #'qp.resolve-source-table/resolve-source-tables)
-   (legacy-middleware #'qp.auto-bucket-datetimes/auto-bucket-datetimes)
-   (legacy-middleware #'reconcile-bucketing/reconcile-breakout-and-order-by-bucketing)
-   (legacy-middleware #'qp.add-source-metadata/add-source-metadata-for-source-queries)
-   (legacy-middleware #'upgrade-field-literals/upgrade-field-literals)
-   (legacy-middleware #'ee-middleware-apply-sandboxing)
-   (legacy-middleware #'qp.persistence/substitute-persisted-query)
-   #'qp.add-implicit-clauses/add-implicit-mbql-clauses
-   (legacy-middleware #'qp.add-dimension-projections/add-remapped-columns)
+   #'expand-macros/expand-macros
+   #'qp.resolve-referenced/resolve-referenced-card-resources
+   #'parameters/substitute-parameters
+   #'qp.resolve-source-table/resolve-source-tables
+   #'qp.auto-bucket-datetimes/auto-bucket-datetimes
+   #'reconcile-bucketing/reconcile-breakout-and-order-by-bucketing
+   #'qp.add-source-metadata/add-source-metadata-for-source-queries
+   #'upgrade-field-literals/upgrade-field-literals
+   #'ee-middleware-apply-sandboxing
+   #'qp.persistence/substitute-persisted-query
+   #'qp.add-implicit-clauses/add-implicit-clauses
+   #'qp.add-dimension-projections/add-remapped-columns
    #'qp.resolve-fields/resolve-fields
-   (legacy-middleware #'binning/update-binning-strategy)
-   (legacy-middleware #'desugar/desugar)
-   (legacy-middleware #'qp.add-default-temporal-unit/add-default-temporal-unit)
-   (legacy-middleware #'qp.add-implicit-joins/add-implicit-joins)
-   (legacy-middleware #'resolve-joins/resolve-joins)
-   (legacy-middleware #'resolve-joined-fields/resolve-joined-fields)
-   (legacy-middleware #'fix-bad-refs/fix-bad-references)
-   (legacy-middleware #'escape-join-aliases/escape-join-aliases)
+   #'binning/update-binning-strategy
+   #'desugar/desugar
+   #'qp.add-default-temporal-unit/add-default-temporal-unit
+   #'qp.add-implicit-joins/add-implicit-joins
+   #'resolve-joins/resolve-joins
+   #'resolve-joined-fields/resolve-joined-fields
+   #'fix-bad-refs/fix-bad-references
+   #'escape-join-aliases/escape-join-aliases
    ;; yes, this is called a second time, because we need to handle any joins that got added
-   (legacy-middleware #'ee-middleware-apply-sandboxing)
-   (legacy-middleware #'qp.cumulative-aggregations/rewrite-cumulative-aggregations)
-   (legacy-middleware #'qp.pre-alias-aggregations/pre-alias-aggregations)
-   (legacy-middleware #'qp.wrap-value-literals/wrap-value-literals)
-   (legacy-middleware #'auto-parse-filter-values/auto-parse-filter-values)
-   (legacy-middleware #'validate-temporal-bucketing/validate-temporal-bucketing)
-   (legacy-middleware #'optimize-temporal-filters/optimize-temporal-filters)
+   #'ee-middleware-apply-sandboxing
+   #'qp.cumulative-aggregations/rewrite-cumulative-aggregations
+   #'qp.pre-alias-aggregations/pre-alias-aggregations
+   #'qp.wrap-value-literals/wrap-value-literals
+   #'auto-parse-filter-values/auto-parse-filter-values
+   #'validate-temporal-bucketing/validate-temporal-bucketing
+   #'optimize-temporal-filters/optimize-temporal-filters
    #'limit/add-default-limit
-   (legacy-middleware #'ee-middleware-apply-download-limit)
-   (legacy-middleware #'check-features/check-features)])
+   #'ee-middleware-apply-download-limit
+   #'check-features/check-features])
 
 (def ^:private ^:dynamic *preprocessing-level* 1)
 

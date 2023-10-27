@@ -12,8 +12,8 @@
    [metabase.query-processor.middleware.mbql-to-native :as mbql-to-native]
    [metabase.query-processor.middleware.results-metadata :as results-metadata]
    [metabase.query-processor.middleware.splice-params-in-response :as splice-params-in-response]
-   [metabase.query-processor.middleware.visualization-settings :as viz-settings]
-   [metabase.lib.convert :as lib.convert]))
+   [metabase.query-processor.middleware.visualization-settings :as
+    viz-settings]))
 
 (defenterprise ee-middleware-merge-sandboxing-metadata
   "EE-only: merge in column metadata from the original, unsandboxed version of the query."
@@ -28,10 +28,6 @@
   [_query rff]
   rff)
 
-(defn- ^:deprecated legacy-middleware [f]
-  (fn [query rff]
-    (f (lib.convert/->legacy-MBQL query) rff)))
-
 (def ^:private middleware
   "Post-processing middleware that transforms results. Has the form
 
@@ -42,20 +38,20 @@
     (f metadata) -> rf
 
   and `rf` is a normal reducing function as you'd pass to [[clojure.core/transduce]]."
-  [(legacy-middleware #'results-metadata/record-and-return-metadata!)
+  [#'results-metadata/record-and-return-metadata!
    #'limit/limit-result-rows
-   (legacy-middleware #'ee-middleware-limit-download-result-rows)
-   (legacy-middleware #'qp.add-rows-truncated/add-rows-truncated)
-   (legacy-middleware #'splice-params-in-response/splice-params-in-response)
-   (legacy-middleware #'qp.add-timezone-info/add-timezone-info)
-   (legacy-middleware #'ee-middleware-merge-sandboxing-metadata)
-   (legacy-middleware #'qp.add-dimension-projections/remap-results)
-   (legacy-middleware #'format-rows/format-rows)
-   (legacy-middleware #'large-int-id/convert-id-to-string)
-   (legacy-middleware #'viz-settings/update-viz-settings)
-   (legacy-middleware #'qp.cumulative-aggregations/sum-cumulative-aggregation-columns)
-   (legacy-middleware #'annotate/add-column-info)
-   (legacy-middleware #'mbql-to-native/add-native-query-to-metadata)])
+   #'ee-middleware-limit-download-result-rows
+   #'qp.add-rows-truncated/add-rows-truncated
+   #'splice-params-in-response/splice-params-in-response
+   #'qp.add-timezone-info/add-timezone-info
+   #'ee-middleware-merge-sandboxing-metadata
+   #'qp.add-dimension-projections/remap-results
+   #'format-rows/format-rows
+   #'large-int-id/convert-id-to-string
+   #'viz-settings/update-viz-settings
+   #'qp.cumulative-aggregations/sum-cumulative-aggregation-columns
+   #'annotate/add-column-info
+   #'mbql-to-native/add-native-query-to-metadata])
 ;;; ↑↑↑ POST-PROCESSING ↑↑↑ happens from BOTTOM TO TOP
 
 (defn postprocessing-rff [query rff]

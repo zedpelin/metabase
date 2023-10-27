@@ -1,13 +1,10 @@
 (ns metabase.query-processor.middleware.limit
   "Middleware that handles limiting the maximum number of rows returned by a query."
   (:require
-   [metabase.lib.core :as lib]
-   [metabase.lib.limit :as lib.limit]
-   [metabase.lib.schema :as lib.schema]
-   [metabase.lib.util :as lib.util]
+   [metabase.mbql.util :as mbql.u]
    [metabase.query-processor.interface :as qp.i]
    [metabase.query-processor.middleware.constraints :as qp.constraints]
-   [metabase.util.malli :as mu]))
+   [metabase.query-processor.util :as qp.util]))
 
 ;;;; Pre-processing
 
@@ -21,18 +18,13 @@
   [query]
   (assoc-in query [:middleware :disable-max-results?] true))
 
-(mu/defn ^:private add-limit :- ::lib.schema/query
-  [max-rows :- ::lib.schema/limit
-   query    :- ::lib.schema/query]
-  (let [last-stage (lib.util/query-stage query -1)]
-    (if (and (= (:lib/type last-stage) :mbql.stage/mbql)
-             (not (lib/aggregations query -1))
-             (not (lib/current-limit query -1))
-             (not (:page last-stage)))
-      (lib/limit query -1 max-rows)
-      query)))
+(defn- add-limit [max-rows {query-type :type, {original-limit :limit}, :query, :as query}]
+  (cond-> query
+    (and (= query-type :query)
+         (qp.util/query-without-aggregations-or-limits? query))
+    (update :query assoc :limit max-rows, ::original-limit original-limit)))
 
-(mu/defn determine-query-max-rows :- [:maybe ::lib.schema/limit]
+(defn determine-query-max-rows
   "Given a `query`, return the max rows that should be returned, or `nil` if no limit should be applied.
   If a limit should be applied, this is the first non-nil value from (in decreasing priority order):
 
@@ -40,10 +32,10 @@
      for database-local override
   2. the output of [[metabase.mbql.util/query->max-rows-limit]] when called on the given query
   3. [[metabase.query-processor.interface/absolute-max-results]] (a constant, non-nil backstop value)"
-  [query :- ::lib.schema/query]
+  [query]
   (when-not (disable-max-results? query)
     (or (qp.constraints/max-results-bare-rows)
-        (lib.limit/query->max-rows-limit query -1)
+        (mbql.u/query->max-rows-limit query)
         qp.i/absolute-max-results)))
 
 (defn add-default-limit

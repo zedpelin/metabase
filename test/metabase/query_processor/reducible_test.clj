@@ -158,7 +158,7 @@
                                   [[1] [2] [3] [4] [5]]))
              :rff      maps-rff})))))
 
-(deftest row-type-agnostic-test
+(deftest ^:parallel row-type-agnostic-test
   (let [api-qp-middleware-options (delay (-> (mt/user-http-request :rasta :post 202 "dataset" (mt/mbql-query users {:limit 1}))
                                              :json_query
                                              :middleware))]

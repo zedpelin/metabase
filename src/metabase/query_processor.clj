@@ -7,22 +7,20 @@
   `process-userland-query` (see documentation below)."
   (:refer-clojure :exclude [compile])
   (:require
-   [clojure.core.async :as a]
    [metabase.config :as config]
+   [metabase.driver :as driver]
+   [metabase.lib.core :as lib]
    [metabase.plugins.classloader :as classloader]
    [metabase.query-processor.compile :as qp.compile]
+   [metabase.query-processor.context-2 :as qp.context]
    [metabase.query-processor.execute :as qp.execute]
    [metabase.query-processor.middleware.escape-join-aliases :as escape-join-aliases]
    [metabase.query-processor.postprocess :as qp.postprocess]
    [metabase.query-processor.preprocess :as qp.preprocess]
    [metabase.query-processor.setup :as qp.setup]
-   [metabase.lib.core :as lib]
-   [metabase.driver :as driver]
-   [metabase.async.util :as async.u]
-   [metabase.util.malli.schema :as ms]
+   [metabase.query-processor.userland :as qp.userland]
    [metabase.util.malli :as mu]
-   [metabase.query-processor.context-2 :as qp.context]
-   [metabase.query-processor.userland :as qp.userland]))
+   [metabase.query-processor.store :as qp.store]))
 
 ;;; +----------------------------------------------------------------------------------------------------------------+
 ;;; |                                                QUERY PROCESSOR                                                 |
@@ -108,7 +106,7 @@
   (qp.setup/do-with-qp-setup
    query
    (^:once fn* [query]
-    (lib/returned-columns (qp.preprocess/preprocess query))))
+    (lib/returned-columns (lib/query (qp.store/metadata-provider) (qp.preprocess/preprocess query)))))
   ;; (when-not (= (mbql.u/normalize-token query-type) :query)
   ;;   (throw (ex-info (tru "Can only determine expected columns for MBQL queries.")
   ;;                   {:type qp.error-type/qp})))

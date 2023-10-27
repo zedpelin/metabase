@@ -9,12 +9,12 @@
 
 (set! *warn-on-reflection* true)
 
-(defn identity-qp
+(defn ^:deprecated identity-qp
   "The initial value of `qp` passed to QP middleware."
   [query rff context]
   (qp.context/runf query rff context))
 
-(defn combine-middleware
+(defn ^:deprecated combine-middleware
   "Combine a collection of QP middleware into a single QP function. The QP function, like the middleware, will have the
   signature:
 
@@ -41,7 +41,7 @@
 ;;
 ;; all over the place, it probably reduces overhead a bit to not run around adding a bunch of timeouts to channels we
 ;; don't end up using.
-(defn- wire-up-context-channels!
+(defn- ^:deprecated wire-up-context-channels!
   "Wire up the core.async channels in a QP `context`
 
   1. If query doesn't complete by [[qp.context/timeout]], call [[qp.context/timeoutf]], which should raise an Exception.
@@ -67,13 +67,13 @@
         (a/close! canceled-chan)))
     nil))
 
-(def ^:dynamic *run-on-separate-thread?*
+(def ^:dynamic ^:deprecated *run-on-separate-thread?*
   "Whether to run the query on a separate thread. When running a query asynchronously (i.e., with [[async-qp]]), this is
   normally `true`, meaning the `out-chan` is returned immediately. When running a query synchronously (i.e., with
   `sync-qp`), this is normally `false`, becuase we are blocking while waiting for results."
   true)
 
-(defn async-qp
+(defn ^:deprecated async-qp
   "Wrap a QP function (middleware or a composition of middleware created with [[combine-middleware]]) with the signature:
 
     (qp query rff context)
@@ -109,14 +109,14 @@
          (thunk))
        (qp.context/out-chan context)))))
 
-(defn- wait-for-async-result [out-chan]
+(defn- ^:deprecated wait-for-async-result [out-chan]
   {:pre [(async.u/promise-chan? out-chan)]}
   (let [result (a/<!! out-chan)]
     (if (instance? Throwable result)
       (throw result)
       result)))
 
-(defn sync-qp
+(defn ^:deprecated sync-qp
   "Wraps a QP function created by [[async-qp]] into one that synchronously waits for query results and rethrows any
   Exceptions thrown. Resulting QP has the signatures
 
@@ -127,9 +127,6 @@
   (fn qp* [& args]
     (binding [*run-on-separate-thread?* false]
       (wait-for-async-result (apply qp args)))))
-
-
-;;; ------------------------------------------------- Other Util Fns -------------------------------------------------
 
 (defn reducible-rows
   "Utility function for generating reducible rows when implementing [[metabase.driver/execute-reducible-query]].
