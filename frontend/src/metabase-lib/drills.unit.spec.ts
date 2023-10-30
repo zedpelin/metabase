@@ -25,7 +25,7 @@ import {
   PRODUCTS_ID,
   SAMPLE_DB_ID,
 } from "metabase-types/api/mocks/presets";
-import { createMockColumn } from "metabase-types/api/mocks";
+import { createMockCustomColumn } from "metabase-types/api/mocks";
 import type {
   ComparisonFilter,
   DatasetColumn,
@@ -35,7 +35,7 @@ import type {
 import type { StructuredQuery as StructuredQueryApi } from "metabase-types/api/query";
 import type StructuredQuery from "metabase-lib/queries/StructuredQuery";
 import Question from "metabase-lib/Question";
-import { columnFinder, DEFAULT_QUERY, SAMPLE_METADATA } from "./test-helpers";
+import { DEFAULT_QUERY, SAMPLE_METADATA } from "./test-helpers";
 import { availableDrillThrus, drillThru } from "./drills";
 
 type TestCaseQueryType = "unaggregated" | "aggregated";
@@ -184,7 +184,7 @@ const AGGREGATED_ORDERS_COLUMNS = {
     unit: "month",
   }),
 
-  count: createMockColumn({
+  count: createMockCustomColumn({
     base_type: "type/BigInteger",
     name: "count",
     display_name: "Count",
@@ -194,7 +194,7 @@ const AGGREGATED_ORDERS_COLUMNS = {
     effective_type: "type/BigInteger",
   }),
 
-  sum: createMockColumn({
+  sum: createMockCustomColumn({
     base_type: "type/Float",
     name: "sum",
     display_name: "Sum of Tax",
@@ -203,7 +203,7 @@ const AGGREGATED_ORDERS_COLUMNS = {
     effective_type: "type/Float",
   }),
 
-  max: createMockColumn({
+  max: createMockCustomColumn({
     base_type: "type/Float",
     name: "max",
     display_name: "Max of Discount",
@@ -288,7 +288,7 @@ const AGGREGATED_PRODUCTS_COLUMNS = {
     ],
   }),
 
-  count: createMockColumn({
+  count: createMockCustomColumn({
     base_type: "type/BigInteger",
     name: "count",
     display_name: "Count",
@@ -1087,7 +1087,7 @@ describe("availableDrillThrus", () => {
       columnName: "count",
       expectedParameters: {
         type: "drill-thru/underlying-records",
-        rowCount: 77, // FIXME: (metabase#32108) this should return real count of rows
+        rowCount: 77,
         tableName: "Orders",
       },
     },
@@ -1098,7 +1098,7 @@ describe("availableDrillThrus", () => {
       columnName: "sum",
       expectedParameters: {
         type: "drill-thru/underlying-records",
-        rowCount: 1, // FIXME: (metabase#32108) this should return real count of rows
+        rowCount: 1, // This is not really a row count, rather the sum value.
         tableName: "Orders",
       },
     },
@@ -1109,7 +1109,7 @@ describe("availableDrillThrus", () => {
       columnName: "max",
       expectedParameters: {
         type: "drill-thru/underlying-records",
-        rowCount: 2, // FIXME: (metabase#32108) this should return real count of rows
+        rowCount: 2, // max is null in the AGGREGATED_ORDERS_ROW_VALUES; that defaults to 2.
         tableName: "Orders",
       },
     },
@@ -1333,7 +1333,7 @@ describe("availableDrillThrus", () => {
     });
 
     const columns = {
-      CustomColumn: createMockColumn({
+      CustomColumn: createMockCustomColumn({
         base_type: "type/Integer",
         name: "CustomColumn",
         display_name: "CustomColumn",
@@ -1353,7 +1353,7 @@ describe("availableDrillThrus", () => {
           },
         ],
       }),
-      count: createMockColumn({
+      count: createMockCustomColumn({
         base_type: "type/BigInteger",
         name: "count",
         display_name: "Count",
@@ -2126,7 +2126,7 @@ describe("drillThru", () => {
     });
     const ORDERS_WITH_CUSTOM_COLUMN_COLUMNS = {
       ...ORDERS_COLUMNS,
-      CustomColumn: createMockColumn({
+      CustomColumn: createMockCustomColumn({
         base_type: "type/Integer",
         name: "CustomColumn",
         display_name: "CustomColumn",
@@ -2135,7 +2135,7 @@ describe("drillThru", () => {
         source: "fields",
         effective_type: "type/Integer",
       }),
-      CustomTax: createMockColumn({
+      CustomTax: createMockCustomColumn({
         base_type: "type/Float",
         name: "CustomTax",
         display_name: "CustomTax",
@@ -2173,12 +2173,36 @@ describe("drillThru", () => {
           },
           aggregation: [
             ...(AGGREGATED_ORDERS_DATASET_QUERY.query.aggregation || []),
-            ["avg", ["expression", "CustomTax"]],
-            ["sum", ["expression", "OtherCustomColumn"]],
+            [
+              "avg",
+              [
+                "expression",
+                "CustomTax",
+                {
+                  "base-type": "type/Number",
+                },
+              ],
+            ],
+            [
+              "sum",
+              [
+                "expression",
+                "OtherCustomColumn",
+                {
+                  "base-type": "type/Integer",
+                },
+              ],
+            ],
           ],
           breakout: [
             ...(AGGREGATED_ORDERS_DATASET_QUERY.query.breakout || []),
-            ["expression", "CustomColumn"],
+            [
+              "expression",
+              "CustomColumn",
+              {
+                "base-type": "type/Integer",
+              },
+            ],
           ],
         },
       };
@@ -2190,7 +2214,7 @@ describe("drillThru", () => {
 
     const AGGREGATED_ORDERS_WITH_CUSTOM_COLUMN_COLUMNS = {
       ...AGGREGATED_ORDERS_COLUMNS,
-      CustomColumn: createMockColumn({
+      CustomColumn: createMockCustomColumn({
         base_type: "type/Integer",
         name: "CustomColumn",
         display_name: "CustomColumn",
@@ -2199,7 +2223,7 @@ describe("drillThru", () => {
         source: "breakout",
         effective_type: "type/Integer",
       }),
-      avg: createMockColumn({
+      avg: createMockCustomColumn({
         base_type: "type/Float",
         name: "avg",
         display_name: "Average of CustomTax",
@@ -2207,7 +2231,7 @@ describe("drillThru", () => {
         field_ref: ["aggregation", 3],
         effective_type: "type/Float",
       }),
-      sum_2: createMockColumn({
+      sum_2: createMockCustomColumn({
         base_type: "type/Float",
         name: "sum_2",
         display_name: "Sum of OtherCustomColumn",
@@ -2255,6 +2279,7 @@ describe("drillThru", () => {
       },
       {
         // should support sorting for custom column without table relation
+        // FIXME: using sort on a custom column produces incorrect query due to expression conversion to a field (metabase#34957)
         drillType: "drill-thru/sort",
         clickType: "header",
         columnName: "CustomColumn",
@@ -2270,7 +2295,7 @@ describe("drillThru", () => {
           ],
         },
       },
-      // using summarize-column on a custom column produces incorrect query due to extra field types (metabase#34957)
+      // FIXME: using summarize-column on a custom column produces incorrect query due to to expression conversion to a field (metabase#34957)
       {
         drillType: "drill-thru/summarize-column",
         clickType: "header",
@@ -2352,18 +2377,6 @@ describe("drillThru", () => {
   });
 });
 
-const getMetadataColumns = (query: Lib.Query): Lib.ColumnMetadata[] => {
-  const aggregations = Lib.aggregations(query, STAGE_INDEX);
-  const breakouts = Lib.breakouts(query, STAGE_INDEX);
-
-  return aggregations.length === 0 && breakouts.length === 0
-    ? Lib.visibleColumns(query, STAGE_INDEX)
-    : [
-        ...Lib.breakoutableColumns(query, STAGE_INDEX),
-        ...Lib.orderableColumns(query, STAGE_INDEX),
-      ];
-};
-
 function setup({
   question = ORDERS_QUESTION,
   clickedColumnName,
@@ -2380,15 +2393,10 @@ function setup({
   const query = question._getMLv2Query();
   const legacyQuery = question.query() as StructuredQuery;
 
-  const stageIndex = -1;
+  const stageIndex = STAGE_INDEX;
 
   const legacyColumns = legacyQuery.columns();
-
-  const metadataColumns = getMetadataColumns(query);
-  const column = columnFinder(query, metadataColumns)(
-    tableName,
-    clickedColumnName,
-  );
+  const column = columns[clickedColumnName];
 
   return {
     query,
@@ -2588,7 +2596,7 @@ function setupDrillDisplayInfo({
   columnName: string;
   query: Lib.Query;
   stageIndex: number;
-  column: Lib.ColumnMetadata;
+  column: Lib.ColumnMetadata | DatasetColumn;
   cellValue: RowValue;
   row: {
     col: DatasetColumn;
