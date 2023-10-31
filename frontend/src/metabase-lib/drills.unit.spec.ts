@@ -1,14 +1,8 @@
 import * as Lib from "metabase-lib";
 import {
   createOrdersCreatedAtDatasetColumn,
-  createOrdersDiscountDatasetColumn,
-  createOrdersIdDatasetColumn,
   createOrdersProductIdDatasetColumn,
-  createOrdersQuantityDatasetColumn,
-  createOrdersSubtotalDatasetColumn,
-  createOrdersTaxDatasetColumn,
-  createOrdersTotalDatasetColumn,
-  createOrdersUserIdDatasetColumn,
+  createOrdersTableDatasetColumnsMap,
   createProductsCategoryDatasetColumn,
   createProductsCreatedAtDatasetColumn,
   createProductsEanDatasetColumn,
@@ -27,18 +21,18 @@ import {
 } from "metabase-types/api/mocks/presets";
 import { createMockCustomColumn } from "metabase-types/api/mocks";
 import type {
-  DatasetColumn,
   Filter,
   RowValue,
   StructuredDatasetQuery,
 } from "metabase-types/api";
 import type { StructuredQuery as StructuredQueryApi } from "metabase-types/api/query";
-import type StructuredQuery from "metabase-lib/queries/StructuredQuery";
 import Question from "metabase-lib/Question";
-import { DEFAULT_QUERY, SAMPLE_METADATA } from "./test-helpers";
-import { availableDrillThrus, drillThru } from "./drills";
-
-type TestCaseQueryType = "unaggregated" | "aggregated";
+import {
+  DEFAULT_QUERY,
+  getAvailableDrillByType,
+  getAvailableDrills,
+  SAMPLE_METADATA,
+} from "./test-helpers";
 
 type BaseTestCase = {
   clickType: "cell" | "header";
@@ -86,17 +80,7 @@ const ORDERS_QUESTION = Question.create({
   metadata: SAMPLE_METADATA,
   dataset_query: ORDERS_DATASET_QUERY,
 });
-const ORDERS_COLUMNS = {
-  ID: createOrdersIdDatasetColumn(),
-  USER_ID: createOrdersUserIdDatasetColumn(),
-  PRODUCT_ID: createOrdersProductIdDatasetColumn(),
-  SUBTOTAL: createOrdersSubtotalDatasetColumn(),
-  TAX: createOrdersTaxDatasetColumn(),
-  TOTAL: createOrdersTotalDatasetColumn(),
-  DISCOUNT: createOrdersDiscountDatasetColumn(),
-  CREATED_AT: createOrdersCreatedAtDatasetColumn(),
-  QUANTITY: createOrdersQuantityDatasetColumn(),
-};
+const ORDERS_COLUMNS = createOrdersTableDatasetColumnsMap();
 const ORDERS_ROW_VALUES: Record<keyof typeof ORDERS_COLUMNS, RowValue> = {
   ID: "3",
   USER_ID: "1",
@@ -305,8 +289,6 @@ const AGGREGATED_PRODUCTS_ROW_VALUES: Record<
   CATEGORY: "Doohickey",
   count: 42,
 };
-
-const STAGE_INDEX = -1;
 
 describe("availableDrillThrus", () => {
   it.each<AvailableDrillsTestCase>([
@@ -589,18 +571,11 @@ describe("availableDrillThrus", () => {
       expectedDrills,
       queryTable = "ORDERS",
     }) => {
-      const { drillsDisplayInfo } =
-        queryTable === "PRODUCTS"
-          ? setupAvailableDrillsWithProductsQuery({
-              clickType,
-              queryType,
-              columnName,
-            })
-          : setupAvailableDrillsWithOrdersQuery({
-              clickType,
-              queryType,
-              columnName,
-            });
+      const { drillsDisplayInfo } = getAvailableDrills({
+        clickedColumnName: columnName,
+        clickType,
+        ...getDrillsQueryParameters(queryType, queryTable),
+      });
 
       expect(drillsDisplayInfo).toEqual(expectedDrills);
     },
@@ -1290,22 +1265,12 @@ describe("availableDrillThrus", () => {
       customQuestion,
       expectedParameters,
     }) => {
-      const { drillDisplayInfo } =
-        queryTable === "PRODUCTS"
-          ? setupDrillDisplayInfoWithProductsQuery({
-              drillType,
-              clickType,
-              queryType,
-              columnName,
-              customQuestion,
-            })
-          : setupDrillDisplayInfoWithOrdersQuery({
-              drillType,
-              clickType,
-              queryType,
-              columnName,
-              customQuestion,
-            });
+      const { drillDisplayInfo } = getAvailableDrillByType({
+        drillType,
+        clickType,
+        clickedColumnName: columnName,
+        ...getDrillsQueryParameters(queryType, queryTable, customQuestion),
+      });
 
       expect(drillDisplayInfo).toEqual(expectedParameters);
     },
@@ -1371,28 +1336,16 @@ describe("availableDrillThrus", () => {
     };
     const clickedColumnName = "count";
 
-    const { query, stageIndex, column, cellValue, row } = setup({
-      question,
+    const { drills } = getAvailableDrills({
       clickedColumnName,
+      question,
       columns,
       rowValues,
-      tableName: "ORDERS",
+      clickType: "cell",
     });
 
-    const dimensions = row
-      .filter(({ col }) => col?.name !== clickedColumnName)
-      .map(({ value, col }) => ({ value, column: col }));
-
-    const drills = availableDrillThrus(
-      query,
-      stageIndex,
-      column,
-      cellValue,
-      row,
-      dimensions,
-    );
-
     expect(drills).toBeInstanceOf(Array);
+    expect(drills.length).toBeGreaterThan(0);
   });
 });
 
@@ -2072,24 +2025,19 @@ describe("drillThru", () => {
       drillArgs = [],
       expectedQuery,
     }) => {
-      const { drill, stageIndex, query } =
-        queryTable === "PRODUCTS"
-          ? setupDrillDisplayInfoWithProductsQuery({
-              drillType,
-              clickType,
-              queryType,
-              columnName,
-              customQuestion,
-            })
-          : setupDrillDisplayInfoWithOrdersQuery({
-              drillType,
-              clickType,
-              queryType,
-              columnName,
-              customQuestion,
-            });
+      const { drill, stageIndex, query } = getAvailableDrillByType({
+        drillType,
+        clickType,
+        clickedColumnName: columnName,
+        ...getDrillsQueryParameters(queryType, queryTable, customQuestion),
+      });
 
-      const updatedQuery = drillThru(query, stageIndex, drill, ...drillArgs);
+      const updatedQuery = Lib.drillThru(
+        query,
+        stageIndex,
+        drill,
+        ...drillArgs,
+      );
 
       expect(Lib.toLegacyQuery(updatedQuery)).toEqual({
         database: SAMPLE_DB_ID,
@@ -2366,34 +2314,24 @@ describe("drillThru", () => {
         expectedQuery,
         drillType,
       }) => {
-        const { query, stageIndex, column, cellValue, row } = setup(
-          queryType === "unaggregated"
+        const parameters = {
+          clickedColumnName: columnName,
+          clickType,
+          ...(queryType === "unaggregated"
             ? {
                 question: ORDERS_WITH_CUSTOM_COLUMN_QUESTION,
-                clickedColumnName: columnName,
                 columns: ORDERS_WITH_CUSTOM_COLUMN_COLUMNS,
                 rowValues: ORDERS_WITH_CUSTOM_COLUMN_ROW_VALUES,
-                tableName: "ORDERS",
               }
             : {
                 question: AGGREGATED_ORDERS_WITH_CUSTOM_COLUMN_QUESTION,
-                clickedColumnName: columnName,
                 columns: AGGREGATED_ORDERS_WITH_CUSTOM_COLUMN_COLUMNS,
                 rowValues: AGGREGATED_ORDERS_WITH_CUSTOM_COLUMN_ROW_VALUES,
-                tableName: "ORDERS",
-              },
-        );
+              }),
+        };
 
-        const { drills, drillsDisplayInfo } = setupDrillDisplayInfo({
-          clickType,
-          queryType: "aggregated",
-          columnName,
-          query,
-          stageIndex,
-          column,
-          cellValue,
-          row,
-        });
+        const { drills, drillsDisplayInfo, query, stageIndex } =
+          getAvailableDrills(parameters);
 
         const drillIndex = drillsDisplayInfo.findIndex(
           ({ type }) => type === drillType,
@@ -2404,7 +2342,7 @@ describe("drillThru", () => {
           throw new TypeError(`Failed to find ${drillType} drill`);
         }
 
-        const updatedQuery = drillThru(
+        const updatedQuery = Lib.drillThru(
           query,
           stageIndex,
           drill,
@@ -2421,266 +2359,34 @@ describe("drillThru", () => {
   });
 });
 
-function setup({
-  question = ORDERS_QUESTION,
-  clickedColumnName,
-  columns,
-  rowValues,
-  tableName,
-}: {
-  question?: Question;
-  clickedColumnName: string;
-  columns: Record<string, DatasetColumn>;
-  rowValues: Record<string, RowValue>;
-  tableName: string;
-}) {
-  const query = question._getMLv2Query();
-  const legacyQuery = question.query() as StructuredQuery;
-
-  const stageIndex = STAGE_INDEX;
-
-  const legacyColumns = legacyQuery.columns();
-  const column = columns[clickedColumnName];
-
-  return {
-    query,
-    stageIndex,
-    column,
-    cellValue: rowValues[clickedColumnName],
-    row: legacyColumns.map(({ name }) => ({
-      col: columns[name],
-      value: rowValues[name],
-    })),
-  };
-}
-
-function setupAvailableDrillsWithOrdersQuery({
-  clickType,
-  queryType,
-  columnName,
-  customQuestion,
-}: {
-  clickType: "cell" | "header";
-  queryType: TestCaseQueryType;
-  columnName: string;
-  customQuestion?: Question;
-  debug?: boolean;
-}) {
-  const { query, stageIndex, column, cellValue, row } = setup(
-    queryType === "unaggregated"
-      ? {
-          question: customQuestion || ORDERS_QUESTION,
-          clickedColumnName: columnName,
-          columns: ORDERS_COLUMNS,
-          rowValues: ORDERS_ROW_VALUES,
-          tableName: "ORDERS",
-        }
-      : {
-          question: customQuestion || AGGREGATED_ORDERS_QUESTION,
-          clickedColumnName: columnName,
-          columns: AGGREGATED_ORDERS_COLUMNS,
-          rowValues: AGGREGATED_ORDERS_ROW_VALUES,
-          tableName: "ORDERS",
-        },
-  );
-
-  return {
-    ...setupDrillDisplayInfo({
-      clickType,
-      queryType,
-      columnName,
-      query,
-      stageIndex,
-      column,
-      cellValue,
-      row,
-    }),
-    query,
-    stageIndex,
-  };
-}
-
-function setupDrillDisplayInfoWithOrdersQuery({
-  drillType,
-  clickType,
-  queryType,
-  columnName,
-  customQuestion,
-}: {
-  drillType: Lib.DrillThruType;
-  clickType: "cell" | "header";
-  queryType: TestCaseQueryType;
-  columnName: string;
-  customQuestion?: Question;
-}) {
-  const { drills, drillsDisplayInfo, query, stageIndex } =
-    setupAvailableDrillsWithOrdersQuery({
-      clickType,
-      queryType,
-      columnName,
-      customQuestion,
-    });
-
-  const drillIndex = drillsDisplayInfo.findIndex(
-    ({ type }) => type === drillType,
-  );
-  const drill = drills[drillIndex];
-  const drillDisplayInfo = drillsDisplayInfo[drillIndex];
-
-  if (!drill) {
-    throw new TypeError(`Failed to find ${drillType} drill`);
-  }
-
-  return {
-    drill,
-    drillDisplayInfo,
-    query,
-    stageIndex,
-  };
-}
-
-function setupAvailableDrillsWithProductsQuery({
-  clickType,
-  queryType,
-  columnName,
-  customQuestion,
-}: {
-  clickType: "cell" | "header";
-  queryType: TestCaseQueryType;
-  columnName: string;
-  customQuestion?: Question;
-  debug?: boolean;
-}) {
-  const { query, stageIndex, column, cellValue, row } = setup(
-    queryType === "unaggregated"
+function getDrillsQueryParameters(
+  queryType: "unaggregated" | "aggregated",
+  queryTable: "ORDERS" | "PRODUCTS" = "ORDERS",
+  customQuestion?: Question,
+) {
+  if (queryTable === "PRODUCTS") {
+    return queryType === "unaggregated"
       ? {
           question: customQuestion || PRODUCTS_QUESTION,
-          clickedColumnName: columnName,
           columns: PRODUCTS_COLUMNS,
           rowValues: PRODUCTS_ROW_VALUES,
-          tableName: "PRODUCTS",
         }
       : {
           question: customQuestion || AGGREGATED_PRODUCTS_QUESTION,
-          clickedColumnName: columnName,
           columns: AGGREGATED_PRODUCTS_COLUMNS,
           rowValues: AGGREGATED_PRODUCTS_ROW_VALUES,
-          tableName: "PRODUCTS",
-        },
-  );
-
-  return {
-    ...setupDrillDisplayInfo({
-      clickType,
-      queryType,
-      columnName,
-      query,
-      stageIndex,
-      column,
-      cellValue,
-      row,
-    }),
-    query,
-    stageIndex,
-  };
-}
-
-function setupDrillDisplayInfoWithProductsQuery({
-  drillType,
-  clickType,
-  queryType,
-  columnName,
-  customQuestion,
-}: {
-  drillType: Lib.DrillThruType;
-  clickType: "cell" | "header";
-  queryType: TestCaseQueryType;
-  columnName: string;
-  customQuestion?: Question;
-  debug?: boolean;
-}) {
-  const { drills, drillsDisplayInfo, query, stageIndex } =
-    setupAvailableDrillsWithProductsQuery({
-      clickType,
-      queryType,
-      columnName,
-      customQuestion,
-    });
-
-  const drillIndex = drillsDisplayInfo.findIndex(
-    ({ type }) => type === drillType,
-  );
-  const drill = drills[drillIndex];
-  const drillDisplayInfo = drillsDisplayInfo[drillIndex];
-
-  if (!drill) {
-    throw new TypeError(`Failed to find ${drillType} drill`);
+        };
   }
 
-  return {
-    drill,
-    drillDisplayInfo,
-    query,
-    stageIndex,
-  };
-}
-
-function setupDrillDisplayInfo({
-  clickType,
-  queryType,
-  columnName,
-  query,
-  stageIndex,
-  column,
-  cellValue,
-  row,
-}: {
-  clickType: "cell" | "header";
-  queryType: TestCaseQueryType;
-  columnName: string;
-  query: Lib.Query;
-  stageIndex: number;
-  column: Lib.ColumnMetadata | DatasetColumn;
-  cellValue: RowValue;
-  row: {
-    col: DatasetColumn;
-    value: RowValue;
-  }[];
-}) {
-  const dimensions =
-    queryType === "aggregated"
-      ? row
-          .filter(
-            ({ col }) => col?.source === "breakout" && col?.name !== columnName,
-          )
-          .map(({ value, col }) => ({ value, column: col }))
-      : undefined;
-
-  const drills =
-    clickType === "cell"
-      ? availableDrillThrus(
-          query,
-          stageIndex,
-          column,
-          cellValue,
-          row,
-          dimensions,
-        )
-      : availableDrillThrus(
-          query,
-          stageIndex,
-          column,
-          undefined,
-          undefined,
-          undefined,
-        );
-
-  const drillsDisplayInfo = drills.map(drill =>
-    Lib.displayInfo(query, stageIndex, drill),
-  );
-
-  return {
-    drills,
-    drillsDisplayInfo,
-  };
+  return queryType === "unaggregated"
+    ? {
+        question: customQuestion || ORDERS_QUESTION,
+        columns: ORDERS_COLUMNS,
+        rowValues: ORDERS_ROW_VALUES,
+      }
+    : {
+        question: customQuestion || AGGREGATED_ORDERS_QUESTION,
+        columns: AGGREGATED_ORDERS_COLUMNS,
+        rowValues: AGGREGATED_ORDERS_ROW_VALUES,
+      };
 }

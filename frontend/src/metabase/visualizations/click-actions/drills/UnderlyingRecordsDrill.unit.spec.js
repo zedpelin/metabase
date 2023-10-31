@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+
 import { assocIn } from "icepick";
 // eslint-disable-next-line no-restricted-imports -- deprecated usage
 import moment from "moment-timezone";
@@ -9,19 +11,16 @@ import {
   PEOPLE,
   PEOPLE_ID,
 } from "metabase-types/api/mocks/presets";
-import { createMockState } from "metabase-types/store/mocks";
-import { createMockEntitiesState } from "__support__/store";
-import { getMetadata } from "metabase/selectors/metadata";
-import UnderlyingRecordsDrill from "./UnderlyingRecordsDrill";
+// import UnderlyingRecordsDrill from "./UnderlyingRecordsDrill";
 
 const metadata = createMockMetadata({
   databases: [createSampleDatabase()],
 });
 
 const ordersTable = metadata.table(ORDERS_ID);
-const peopleTable = metadata.table(PEOPLE_ID);
 
-describe("UnderlyingRecordsDrill", () => {
+// eslint-disable-next-line jest/no-disabled-tests
+describe.skip("UnderlyingRecordsDrill", () => {
   it("should not be valid for top level actions", () => {
     const question = ordersTable.newQuestion();
     const actions = UnderlyingRecordsDrill({ question });
@@ -198,42 +197,6 @@ describe("UnderlyingRecordsDrill", () => {
     });
     expect(q.display()).toEqual("table");
   });
-
-  describe("title", () => {
-    it('should return "See these records" title for entities with title longer than 20 chars', () => {
-      const actions = UnderlyingRecordsDrill(setup("LongLongLongTableTitle"));
-      expect(actions).toHaveLength(1);
-
-      const [action] = actions;
-      if (!("title" in action)) {
-        throw new Error("Received unexpected action type");
-      }
-
-      expect(action.title).toEqual("See these records");
-    });
-
-    it("should contain entity title for entities shorter than 21 chars", () => {
-      const actions = UnderlyingRecordsDrill(setup("SomeTitle"));
-      expect(actions).toHaveLength(1);
-
-      const [action] = actions;
-      expect(action.title).toEqual("See these SomeTitles");
-    });
-
-    // NOTE: this test is valid only until lib drill returns metric value instead of underlying rows count
-    it("should return correct pluralized title for negative numeric values (metabase#32108)", () => {
-      const query = peopleTable
-        .query()
-        .aggregate(["sum", ["field", PEOPLE.LATITUDE, null]])
-        .breakout(metadata.field(PEOPLE.STATE));
-
-      const actions = UnderlyingRecordsDrill(getActionProps(query, -1000));
-      expect(actions).toHaveLength(1);
-
-      const [action] = actions;
-      expect(action.title).toEqual("See these People");
-    });
-  });
 });
 
 function getActionProps(query, value) {
@@ -246,39 +209,6 @@ function getActionProps(query, value) {
         {
           column: query.breakouts()[0].dimension().column(),
           value: value,
-        },
-      ],
-    },
-  };
-}
-
-function getMockTable(tableDisplayName) {
-  const state = createMockState({
-    entities: createMockEntitiesState({
-      databases: [createSampleDatabase()],
-    }),
-  });
-
-  const metadata = getMetadata(state);
-  const table = metadata.table(ORDERS_ID);
-
-  table.display_name = tableDisplayName;
-
-  return table;
-}
-
-function setup(tableDisplayName) {
-  const table = getMockTable(tableDisplayName);
-
-  return {
-    question: table.newQuestion(),
-    clicked: {
-      column: table.fields[0].column(),
-      value: 42,
-      dimensions: [
-        {
-          column: table.fields[0].column(),
-          value: 42,
         },
       ],
     },

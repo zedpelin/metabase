@@ -1,5 +1,4 @@
 import { AutomaticInsightsDrill } from "metabase/visualizations/click-actions/drills/AutomaticInsightsDrill";
-import UnderlyingRecordsDrill from "metabase/visualizations/click-actions/drills/UnderlyingRecordsDrill";
 import { ObjectDetailDrill } from "metabase/visualizations/click-actions/drills/ObjectDetailDrill";
 import ZoomDrill from "metabase/visualizations/click-actions/drills/ZoomDrill";
 import { ColumnFilterDrill } from "metabase/visualizations/click-actions/drills/ColumnFilterDrill";
@@ -10,7 +9,6 @@ import { DashboardClickAction } from "../actions/DashboardClickAction";
 export const DefaultMode: QueryClickActionsMode = {
   name: "default",
   clickActions: [
-    UnderlyingRecordsDrill,
     ZoomDrill,
     ObjectDetailDrill,
     ColumnFilterDrill,

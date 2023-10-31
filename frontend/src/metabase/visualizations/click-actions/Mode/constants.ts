@@ -6,10 +6,10 @@ import { FKFilterDrill } from "../drills/mlv2/FKFilterDrill";
 import { SummarizeColumnByTimeDrill } from "../drills/mlv2/SummarizeColumnByTimeDrill";
 import { SortDrill } from "../drills/mlv2/SortDrill";
 import { DistributionDrill } from "../drills/mlv2/DistributionDrill";
+import { UnderlyingRecordsDrill } from "../drills/mlv2/UnderlyingRecordsDrill";
 
 export const MODE_TYPE_DEFAULT = "default";
 export const MODE_TYPE_NATIVE = "native";
-// export const MODE_TYPE_SEGMENT = "segment";
 export const MODE_TYPE_METRIC = "metric";
 export const MODE_TYPE_TIMESERIES = "timeseries";
 export const MODE_TYPE_GEO = "geo";
@@ -17,7 +17,6 @@ export const MODE_TYPE_PIVOT = "pivot";
 
 export const MODES_TYPES = [
   MODE_TYPE_NATIVE,
-  // MODE_TYPE_SEGMENT,
   MODE_TYPE_METRIC,
   MODE_TYPE_TIMESERIES,
   MODE_TYPE_GEO,
@@ -40,6 +39,6 @@ export const DRILL_TYPE_TO_HANDLER_MAP: Record<
   "drill-thru/sort": SortDrill,
   "drill-thru/summarize-column": SummarizeColumnDrill,
   "drill-thru/summarize-column-by-time": SummarizeColumnByTimeDrill,
-  "drill-thru/underlying-records": null, // UnderlyingRecordsDrill,
+  "drill-thru/underlying-records": UnderlyingRecordsDrill,
   "drill-thru/zoom-in.timeseries": null,
 };
