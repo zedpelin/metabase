@@ -27,8 +27,8 @@ import {
 } from "metabase-types/api/mocks/presets";
 import { createMockCustomColumn } from "metabase-types/api/mocks";
 import type {
-  ComparisonFilter,
   DatasetColumn,
+  Filter,
   RowValue,
   StructuredDatasetQuery,
 } from "metabase-types/api";
@@ -493,48 +493,48 @@ describe("availableDrillThrus", () => {
         },
       ],
     },
-    // FIXME: quick-filter gets returned for non-metric column (metabase#34443)
-    // {
-    //   clickType: "cell",
-    //   queryType: "aggregated",
-    //   columnName: "PRODUCT_ID",
-    //   expectedDrills: [
-    //     {
-    //       type: "drill-thru/fk-filter",
-    //     },
-    //     {
-    //       type: "drill-thru/fk-details",
-    //       objectId: AGGREGATED_ORDERS_ROW_VALUES.PRODUCT_ID as number,
-    //       "manyPks?": false,
-    //     },
-    //     {
-    //       rowCount: 3, // FIXME: (metabase#32108) this should return real count of rows
-    //       tableName: "Orders",
-    //       type: "drill-thru/underlying-records",
-    //     },
-    //   ],
-    // },
-    // FIXME: quick-filter gets returned for non-metric column (metabase#34443)
-    // {
-    //   clickType: "cell",
-    //   queryType: "aggregated",
-    //   columnName: "CREATED_AT",
-    //   expectedDrills: [
-    //     {
-    //       type: "drill-thru/quick-filter",
-    //       operators: ["<", ">", "=", "≠"],
-    //     },
-    //     {
-    //       rowCount: 2, // FIXME: (metabase#32108) this should return real count of rows
-    //       tableName: "Orders",
-    //       type: "drill-thru/underlying-records",
-    //     },
-    //     {
-    //       displayName: "See this month by week",
-    //       type: "drill-thru/zoom-in.timeseries",
-    //     },
-    //   ],
-    // },
+    // FIXME: drill-thru/zoom-in.timeseries should not be returned for date column
+    {
+      clickType: "cell",
+      queryType: "aggregated",
+      columnName: "PRODUCT_ID",
+      expectedDrills: [
+        {
+          type: "drill-thru/fk-filter",
+        },
+        {
+          type: "drill-thru/fk-details",
+          objectId: AGGREGATED_ORDERS_ROW_VALUES.PRODUCT_ID as number,
+          "manyPks?": false,
+        },
+        {
+          rowCount: 3, // FIXME: (metabase#32108) this should return real count of rows
+          tableName: "Orders",
+          type: "drill-thru/underlying-records",
+        },
+        {
+          displayName: "See this month by week",
+          type: "drill-thru/zoom-in.timeseries",
+        },
+      ],
+    },
+    // FIXME: drill-thru/zoom-in.timeseries should be returned for date column
+    {
+      clickType: "cell",
+      queryType: "aggregated",
+      columnName: "CREATED_AT",
+      expectedDrills: [
+        {
+          type: "drill-thru/quick-filter",
+          operators: ["<", ">", "=", "≠"],
+        },
+        {
+          rowCount: 2, // FIXME: (metabase#32108) this should return real count of rows
+          tableName: "Orders",
+          type: "drill-thru/underlying-records",
+        },
+      ],
+    },
     {
       clickType: "header",
       queryType: "aggregated",
@@ -1078,6 +1078,7 @@ describe("availableDrillThrus", () => {
         operators: ["=", "≠"],
       },
     },
+    // endregion
 
     // region --- drill-thru/underlying-records
     {
@@ -2007,7 +2008,7 @@ describe("drillThru", () => {
             },
           ],
           AGGREGATED_ORDERS_ROW_VALUES.CREATED_AT,
-        ] as ComparisonFilter,
+        ] as Filter,
       },
     },
     {
@@ -2310,6 +2311,49 @@ describe("drillThru", () => {
               ["expression", "CustomColumn", { "base-type": "type/Integer" }],
             ],
           ],
+        },
+      },
+      {
+        drillType: "drill-thru/quick-filter",
+        clickType: "cell",
+        columnName: "CustomColumn",
+        drillArgs: [">"],
+        queryType: "aggregated",
+        expectedQuery: {
+          ...AGGREGATED_ORDERS_WITH_CUSTOM_COLUMN_DATASET_QUERY.query,
+          filter: [
+            ">",
+            [
+              "field",
+              "CustomColumn",
+              {
+                "base-type": "type/Integer",
+              },
+            ],
+            AGGREGATED_ORDERS_WITH_CUSTOM_COLUMN_ROW_VALUES.CustomColumn,
+          ] as Filter,
+        },
+      },
+      {
+        drillType: "drill-thru/quick-filter",
+        clickType: "cell",
+        columnName: "avg",
+        drillArgs: ["≠"],
+        queryType: "aggregated",
+        expectedQuery: {
+          filter: [
+            "!=",
+            [
+              "field",
+              "avg",
+              {
+                "base-type": "type/Float",
+              },
+            ],
+            AGGREGATED_ORDERS_WITH_CUSTOM_COLUMN_ROW_VALUES.avg,
+          ] as Filter,
+          "source-query":
+            AGGREGATED_ORDERS_WITH_CUSTOM_COLUMN_DATASET_QUERY.query,
         },
       },
     ])(
