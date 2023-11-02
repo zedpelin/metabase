@@ -73,9 +73,10 @@ describe("ClickActionsPopover", function () {
         expect(props.onUpdateVisualizationSettings).toHaveBeenCalledTimes(1);
         expect(props.onUpdateVisualizationSettings).toHaveBeenLastCalledWith({
           column_settings: {
-            [`["ref",["field",${ORDERS.ID},null]]`]: {
-              column_title: "ID NEW NAME",
-            },
+            [`["ref",["field",${ORDERS.ID},{\"base-type\":\"type/Integer\"}]]`]:
+              {
+                column_title: "ID NEW NAME",
+              },
           },
         });
       });
@@ -103,7 +104,11 @@ describe("ClickActionsPopover", function () {
             dataset_query: {
               database: SAMPLE_DB_ID,
               query: {
-                filter: ["=", ["field", ORDERS.ID, null], filterValue],
+                filter: [
+                  "=",
+                  ["field", ORDERS.ID, { "base-type": "type/Integer" }],
+                  filterValue,
+                ],
                 "source-table": ORDERS_ID,
               },
               type: "query",
