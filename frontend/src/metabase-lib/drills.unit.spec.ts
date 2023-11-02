@@ -19,18 +19,23 @@ import {
   PRODUCTS_ID,
   SAMPLE_DB_ID,
 } from "metabase-types/api/mocks/presets";
-import { createMockCustomColumn } from "metabase-types/api/mocks";
+import {
+  createMockCard,
+  createMockCustomColumn,
+} from "metabase-types/api/mocks";
 import type {
   Filter,
   RowValue,
   StructuredDatasetQuery,
 } from "metabase-types/api";
 import type { StructuredQuery as StructuredQueryApi } from "metabase-types/api/query";
+import { createMockMetadata } from "__support__/metadata";
 import Question from "metabase-lib/Question";
 import {
   DEFAULT_QUERY,
   getAvailableDrillByType,
   getAvailableDrills,
+  SAMPLE_DATABASE,
   SAMPLE_METADATA,
 } from "./test-helpers";
 
@@ -1087,6 +1092,51 @@ describe("availableDrillThrus", () => {
         type: "drill-thru/underlying-records",
         rowCount: 2, // max is null in the AGGREGATED_ORDERS_ROW_VALUES; that defaults to 2.
         tableName: "Orders",
+      },
+    },
+    // FIXME: underlying-records doesn't resolve tableName when query source is a saved question (metabase#35340)
+    {
+      drillType: "drill-thru/underlying-records",
+      clickType: "cell",
+      queryType: "aggregated",
+      columnName: "count",
+      customQuestion: Question.create({
+        metadata: createMockMetadata({
+          databases: [SAMPLE_DATABASE],
+          questions: [
+            createMockCard({
+              id: 2,
+              name: "CA People",
+              dataset_query: {
+                type: "query",
+                database: SAMPLE_DB_ID,
+                query: { "source-table": ORDERS_ID, limit: 5 },
+              },
+            }),
+          ],
+        }),
+        dataset_query: {
+          type: "query",
+          database: SAMPLE_DB_ID,
+          query: {
+            aggregation: [["count"]],
+            breakout: [
+              [
+                "field",
+                ORDERS.PRODUCT_ID,
+                {
+                  "base-type": "type/Integer",
+                },
+              ],
+            ],
+            "source-table": "card__2",
+          },
+        },
+      }),
+      expectedParameters: {
+        type: "drill-thru/underlying-records",
+        rowCount: 77,
+        tableName: "CA People",
       },
     },
     // endregion
