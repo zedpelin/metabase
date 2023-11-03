@@ -6,19 +6,24 @@ import type {
   RenderingContext,
 } from "metabase/visualizations/types";
 import { buildAxes } from "metabase/visualizations/echarts/cartesian/option/axis";
-import { getGoalLineEChartsSeries } from "./goal-line";
+
+import { getGoalLineSeriesOption } from "./goal-line";
 
 export const getCartesianChartOption = (
   chartModel: CartesianChartModel,
   settings: ComputedVisualizationSettings,
   renderingContext: RenderingContext,
 ): EChartsOption => {
-  const goalLineSeries = getGoalLineEChartsSeries(
+  const goalSeriesOption = getGoalLineSeriesOption(
     chartModel,
     settings,
     renderingContext,
   );
-  const dataSeries = buildEChartsSeries(chartModel, settings, renderingContext);
+  const dataSeriesOption = buildEChartsSeries(
+    chartModel,
+    settings,
+    renderingContext,
+  );
 
   const dimensions = [
     chartModel.dimensionModel.dataKey,
@@ -31,7 +36,9 @@ export const getCartesianChartOption = (
 
   return {
     dataset: echartsDataset,
-    series: goalLineSeries ? [goalLineSeries, ...dataSeries] : dataSeries,
+    series: goalSeriesOption
+      ? [goalSeriesOption, ...dataSeriesOption]
+      : dataSeriesOption,
     ...buildAxes(chartModel, settings, renderingContext),
   } as EChartsOption;
 };
