@@ -85,7 +85,7 @@ jobs:
       uses: actions/github-script@v6
       id: release_branch
       with:
-        result_encoding: string
+        result-encoding: string
         script: | # js
           const { getReleaseBranch } = require('${{ github.workspace }}/release/dist/index.cjs');
           const version = '${{ inputs.version }}';
