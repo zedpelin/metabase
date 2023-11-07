@@ -1,5 +1,6 @@
 import {
   restore,
+  snapshot,
   queryWritableDB,
   popover,
   describeWithSnowplow,
@@ -8,6 +9,8 @@ import {
   resetSnowplow,
   enableTracking,
   setTokenFeatures,
+  setupWritableDB,
+  addPostgresDatabase,
 } from "e2e/support/helpers";
 
 import { WRITABLE_DB_ID, USER_GROUPS } from "e2e/support/cypress_data";
@@ -41,13 +44,21 @@ describeWithSnowplow(
   "CSV Uploading",
   { tags: ["@external", "@actions"] },
   () => {
+    before(() => {
+      restore("default");
+      cy.signInAsAdmin();
+
+      setupWritableDB("postgres");
+      addPostgresDatabase("Writable Postgres12", true);
+      snapshot("postgres-writable");
+    });
+
     it("Can upload a CSV file to an empty postgres schema", () => {
       const testFile = validTestFiles[0];
       const EMPTY_SCHEMA_NAME = "empty_uploads";
 
       cy.intercept("PUT", "/api/setting").as("saveSettings");
 
-      restore("postgres-writable");
       cy.signInAsAdmin();
 
       queryWritableDB(

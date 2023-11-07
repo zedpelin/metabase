@@ -6,6 +6,8 @@ import {
   resetTestTable,
   startNewQuestion,
   resyncDatabase,
+  setupWritableDB,
+  addPostgresDatabase,
 } from "e2e/support/helpers";
 import {
   SAMPLE_DB_ID,
@@ -179,10 +181,17 @@ function getUnfoldJsonContent() {
 }
 
 describe("Unfold JSON", () => {
-  beforeEach(() => {
-    resetTestTable({ type: "postgres", table: "many_data_types" });
-    restore(`postgres-writable`);
+  before(() => {
+    restore("default");
     cy.signInAsAdmin();
+
+    setupWritableDB("postgres");
+    addPostgresDatabase("Writable Postgres12", true);
+  });
+
+  beforeEach(() => {
+    cy.signInAsAdmin();
+    resetTestTable({ type: "postgres", table: "many_data_types" });
     resyncDatabase({ dbId: WRITABLE_DB_ID, tableName: "many_data_types" });
   });
 

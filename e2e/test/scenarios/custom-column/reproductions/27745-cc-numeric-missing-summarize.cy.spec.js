@@ -6,16 +6,29 @@ import {
   visualize,
   popover,
   resetTestTable,
+  setupWritableDB,
+  addPostgresDatabase,
+  addMySQLDatabase,
 } from "e2e/support/helpers";
 
 ["postgres", "mysql"].forEach(dialect => {
   describe(`issue 27745 (${dialect})`, { tags: "@external" }, () => {
     const tableName = "colors27745";
 
-    beforeEach(() => {
-      restore(`${dialect}-writable`);
+    before(() => {
+      restore("default");
       cy.signInAsAdmin();
 
+      setupWritableDB(dialect);
+
+      if (dialect === "postgres") {
+        addPostgresDatabase("Writable Postgres12", true);
+      } else {
+        addMySQLDatabase("Writable MySQL8", true);
+      }
+    });
+
+    beforeEach(() => {
       resetTestTable({ type: dialect, table: tableName });
       cy.request("POST", `/api/database/${WRITABLE_DB_ID}/sync_schema`);
     });

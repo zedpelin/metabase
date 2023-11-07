@@ -7,6 +7,8 @@ import {
   getDashboardCard,
   resetTestTable,
   resyncDatabase,
+  setupWritableDB,
+  addPostgresDatabase,
 } from "e2e/support/helpers";
 
 import { ORDERS_DASHBOARD_ID } from "e2e/support/cypress_sample_instance_data";
@@ -146,106 +148,106 @@ describe("scenarios > dashboard > chained filter", () => {
     });
   }
 
-  it(
-    "should work for all field types (metabase#15170)",
-    { tags: "@external" },
+  describe("field types", { tags: "@external" }, () => {
+    const TEST_TABLE = "many_data_types";
 
-    () => {
-      const dialect = "postgres";
-      const TEST_TABLE = "many_data_types";
-
-      resetTestTable({ type: dialect, table: TEST_TABLE });
-      restore(`${dialect}-writable`);
+    before(() => {
+      restore("default");
       cy.signInAsAdmin();
+
+      setupWritableDB("postgres");
+      addPostgresDatabase("Writable Postgres12", true);
+    });
+
+    beforeEach(() => {
+      cy.signInAsAdmin();
+      resetTestTable({ type: "postgres", table: TEST_TABLE });
       resyncDatabase({ tableName: TEST_TABLE, tableAlias: "testTable" });
+    });
+  });
 
-      cy.get("@testTable").then(testTable => {
-        const testTableId = testTable.id;
-        const uuidFieldId = testTable.fields.find(
-          field => field.name === "uuid",
-        ).id;
-        const idFieldId = testTable.fields.find(
-          field => field.name === "id",
-        ).id;
+  it("should work for all field types (metabase#15170)", () => {
+    cy.get("@testTable").then(testTable => {
+      const testTableId = testTable.id;
+      const uuidFieldId = testTable.fields.find(
+        field => field.name === "uuid",
+      ).id;
+      const idFieldId = testTable.fields.find(field => field.name === "id").id;
 
-        cy.wrap(testTableId).as("testTableId");
-        cy.wrap(uuidFieldId).as("uuidFieldId");
+      cy.wrap(testTableId).as("testTableId");
+      cy.wrap(uuidFieldId).as("uuidFieldId");
 
-        cy.log(
-          "Mimics that UUID is the table's primary key, so we could map dashboard ID parameter to UUID",
-        );
-        cy.request("PUT", `/api/field/${idFieldId}`, {
-          semantic_type: null,
-        });
-
-        cy.request("PUT", `/api/field/${uuidFieldId}`, {
-          semantic_type: "type/PK",
-        });
+      cy.log(
+        "Mimics that UUID is the table's primary key, so we could map dashboard ID parameter to UUID",
+      );
+      cy.request("PUT", `/api/field/${idFieldId}`, {
+        semantic_type: null,
       });
 
-      cy.then(function () {
-        const TEST_TABLE_ID = this.testTableId;
-        const UUID_FIELD_ID = this.uuidFieldId;
+      cy.request("PUT", `/api/field/${uuidFieldId}`, {
+        semantic_type: "type/PK",
+      });
+    });
 
-        cy.createQuestion({
-          name: "15170",
-          database: WRITABLE_DB_ID,
-          query: { "source-table": TEST_TABLE_ID },
-        }).then(({ body: { id: QUESTION_ID } }) => {
-          cy.createDashboard().then(({ body: { id: DASHBOARD_ID } }) => {
-            // Add filter to the dashboard
-            cy.request("PUT", `/api/dashboard/${DASHBOARD_ID}`, {
-              parameters: [
+    cy.then(function () {
+      const TEST_TABLE_ID = this.testTableId;
+      const UUID_FIELD_ID = this.uuidFieldId;
+
+      cy.createQuestion({
+        name: "15170",
+        database: WRITABLE_DB_ID,
+        query: { "source-table": TEST_TABLE_ID },
+      }).then(({ body: { id: QUESTION_ID } }) => {
+        cy.createDashboard().then(({ body: { id: DASHBOARD_ID } }) => {
+          // Add filter to the dashboard
+          cy.request("PUT", `/api/dashboard/${DASHBOARD_ID}`, {
+            parameters: [
+              {
+                id: "50c9eac6",
+                name: "ID",
+                slug: "id",
+                type: "id",
+              },
+            ],
+          });
+
+          // Add previously created question to the dashboard
+          addOrUpdateDashboardCard({
+            card_id: QUESTION_ID,
+            dashboard_id: DASHBOARD_ID,
+          }).then(({ body: { id: DASH_CARD_ID } }) => {
+            // Connect filter to that question
+            cy.request("PUT", `/api/dashboard/${DASHBOARD_ID}/cards`, {
+              cards: [
                 {
-                  id: "50c9eac6",
-                  name: "ID",
-                  slug: "id",
-                  type: "id",
+                  id: DASH_CARD_ID,
+                  card_id: QUESTION_ID,
+                  row: 0,
+                  col: 0,
+                  size_x: 11,
+                  size_y: 6,
+                  parameter_mappings: [
+                    {
+                      parameter_id: "50c9eac6",
+                      card_id: QUESTION_ID,
+                      target: ["dimension", ["field-id", UUID_FIELD_ID]],
+                    },
+                  ],
                 },
               ],
             });
-
-            // Add previously created question to the dashboard
-            addOrUpdateDashboardCard({
-              card_id: QUESTION_ID,
-              dashboard_id: DASHBOARD_ID,
-            }).then(({ body: { id: DASH_CARD_ID } }) => {
-              // Connect filter to that question
-              cy.request("PUT", `/api/dashboard/${DASHBOARD_ID}/cards`, {
-                cards: [
-                  {
-                    id: DASH_CARD_ID,
-                    card_id: QUESTION_ID,
-                    row: 0,
-                    col: 0,
-                    size_x: 11,
-                    size_y: 6,
-                    parameter_mappings: [
-                      {
-                        parameter_id: "50c9eac6",
-                        card_id: QUESTION_ID,
-                        target: ["dimension", ["field-id", UUID_FIELD_ID]],
-                      },
-                    ],
-                  },
-                ],
-              });
-            });
-
-            visitDashboard(DASHBOARD_ID);
-            cy.icon("pencil").click();
-            showDashboardCardActions();
-            getDashboardCard().icon("click").click();
-            cy.findByText("UUID").click();
-            cy.findByText("Update a dashboard filter").click();
-            cy.findByText("Available filters")
-              .parent()
-              .findByText("ID")
-              .click();
-            popover().findByText("UUID").should("be.visible");
           });
+
+          visitDashboard(DASHBOARD_ID);
+          cy.icon("pencil").click();
+          showDashboardCardActions();
+          getDashboardCard().icon("click").click();
+          cy.findByText("UUID").click();
+          cy.findByText("Update a dashboard filter").click();
+          cy.findByText("Available filters").parent().findByText("ID").click();
+          popover().findByText("UUID").should("be.visible");
         });
       });
-    },
-  );
+    });
+  });
 });

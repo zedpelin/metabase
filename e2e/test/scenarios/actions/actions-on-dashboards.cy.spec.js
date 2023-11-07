@@ -1,5 +1,6 @@
 import { assocIn } from "icepick";
 import {
+  snapshot,
   restore,
   queryWritableDB,
   resetTestTable,
@@ -22,6 +23,9 @@ import {
   resetSnowplow,
   expectNoBadSnowplowEvents,
   expectGoodSnowplowEvent,
+  setupWritableDB,
+  addMySQLDatabase,
+  addPostgresDatabase,
 } from "e2e/support/helpers";
 
 import { many_data_types_rows } from "e2e/support/test_tables_data";
@@ -39,6 +43,20 @@ const MODEL_NAME = "Test Action Model";
     `Write Actions on Dashboards (${dialect})`,
     { tags: ["@external", "@actions"] },
     () => {
+      before(() => {
+        restore("default");
+        cy.signInAsAdmin();
+
+        setupWritableDB(dialect);
+        if (dialect === "postgres") {
+          addPostgresDatabase("Writable Postgres12", true);
+        } else {
+          addMySQLDatabase("Writable MySQL8", true);
+        }
+
+        snapshot(`${dialect}-writable`);
+      });
+
       beforeEach(() => {
         cy.intercept("GET", /\/api\/card\/\d+/).as("getModel");
         cy.intercept("GET", "/api/card?f=using_model&model_id=**").as(
@@ -60,10 +78,10 @@ const MODEL_NAME = "Test Action Model";
 
       describeWithSnowplow("adding and executing actions", () => {
         beforeEach(() => {
+          cy.signInAsAdmin();
           resetSnowplow();
           resetTestTable({ type: dialect, table: TEST_TABLE });
           restore(`${dialect}-writable`);
-          cy.signInAsAdmin();
           enableTracking();
           resyncDatabase({ dbId: WRITABLE_DB_ID, tableName: TEST_TABLE });
           createModelFromTableName({
@@ -971,9 +989,17 @@ const MODEL_NAME = "Test Action Model";
 });
 
 describe("action error handling", { tags: ["@external", "@actions"] }, () => {
+  before(() => {
+    restore("default");
+    cy.signInAsAdmin();
+
+    setupWritableDB("postgres");
+    addPostgresDatabase("Writable Postgres12", true);
+  });
+
   beforeEach(() => {
     resetTestTable({ type: "postgres", table: TEST_TABLE });
-    restore("postgres-writable");
+
     cy.signInAsAdmin();
     resyncDatabase({ dbId: WRITABLE_DB_ID, tableName: TEST_TABLE });
     createModelFromTableName({
@@ -1024,6 +1050,15 @@ describe(
   "Action Parameters Mapping",
   { tags: ["@external", "@actions"] },
   () => {
+    before(() => {
+      restore("default");
+      cy.signInAsAdmin();
+
+      setupWritableDB("postgres");
+      addPostgresDatabase("Writable Postgres12", true);
+      snapshot("postgres-writable");
+    });
+
     beforeEach(() => {
       cy.intercept("GET", /\/api\/card\/\d+/).as("getModel");
       cy.intercept("GET", "/api/card?f=using_model&model_id=**").as(

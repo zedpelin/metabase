@@ -1,4 +1,5 @@
 import {
+  snapshot,
   restore,
   popover,
   openOrdersTable,
@@ -10,6 +11,9 @@ import {
   getTableId,
   visitPublicQuestion,
   visitPublicDashboard,
+  setupWritableDB,
+  addPostgresDatabase,
+  addMySQLDatabase,
 } from "e2e/support/helpers";
 
 import { WRITABLE_DB_ID, SAMPLE_DB_ID } from "e2e/support/cypress_data";
@@ -329,6 +333,20 @@ function changeSorting(columnName, direction) {
     { tags: ["@external"] },
     () => {
       const TEST_TABLE = "composite_pk_table";
+
+      before(() => {
+        restore("default");
+        cy.signInAsAdmin();
+
+        setupWritableDB(dialect);
+        if (dialect === "postgres") {
+          addPostgresDatabase("Writable Postgres12", true);
+        } else {
+          addMySQLDatabase("Writable MySQL8", true);
+        }
+
+        snapshot(`${dialect}-writable`);
+      });
 
       beforeEach(() => {
         resetTestTable({ type: dialect, table: TEST_TABLE });

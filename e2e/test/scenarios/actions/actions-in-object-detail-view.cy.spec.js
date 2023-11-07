@@ -12,6 +12,8 @@ import {
   visitModel,
   createModelFromTableName,
   createImplicitActions,
+  setupWritableDB,
+  addPostgresDatabase,
 } from "e2e/support/helpers";
 
 const WRITABLE_TEST_TABLE = "scoreboard_actions";
@@ -29,6 +31,14 @@ describe(
   "scenarios > actions > actions-in-object-detail-view",
   { tags: ["@external", "@actions"] },
   () => {
+    before(() => {
+      restore("default");
+      cy.signInAsAdmin();
+
+      setupWritableDB("postgres");
+      addPostgresDatabase("Writable Postgres12", true);
+    });
+
     beforeEach(() => {
       cy.intercept("GET", "/api/action?model-id=*").as("getModelActions");
       cy.intercept("POST", "/api/action/*/execute").as("executeAction");
@@ -36,8 +46,9 @@ describe(
         "prefetchValues",
       );
 
+      cy.signInAsAdmin();
       resetTestTable({ type: "postgres", table: WRITABLE_TEST_TABLE });
-      restore("postgres-writable");
+
       asAdmin(() => {
         resyncDatabase({
           dbId: WRITABLE_DB_ID,

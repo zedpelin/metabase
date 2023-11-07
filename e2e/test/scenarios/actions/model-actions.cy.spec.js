@@ -12,6 +12,10 @@ import {
   createModelFromTableName,
   queryWritableDB,
   setTokenFeatures,
+  snapshot,
+  setupWritableDB,
+  addPostgresDatabase,
+  addMySQLDatabase,
 } from "e2e/support/helpers";
 
 import {
@@ -360,6 +364,19 @@ describe(
 
 ["postgres", "mysql"].forEach(dialect => {
   describe(`Write actions on model detail page (${dialect})`, () => {
+    before(() => {
+      restore("default");
+      cy.signInAsAdmin();
+
+      setupWritableDB(dialect);
+      if (dialect === "postgres") {
+        addPostgresDatabase("Writable Postgres12", true);
+      } else {
+        addMySQLDatabase("Writable MySQL8", true);
+      }
+      snapshot(`${dialect}-writable`);
+    });
+
     beforeEach(() => {
       cy.intercept("GET", "/api/card/*").as("getModel");
       cy.intercept("GET", "/api/action/*").as("getAction");
