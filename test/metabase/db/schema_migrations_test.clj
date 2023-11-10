@@ -1189,7 +1189,7 @@
 
 (deftest remove-collection-color-test
   (testing "Migration v48.00-019"
-    (impl/test-migrations ["v48.00-019"] [migrate!]
+    (impl/test-migrations "v48.00-019" [migrate!]
       (let [{:keys [db-type ^javax.sql.DataSource data-source]} mdb.connection/*application-db*
             collection-id (first (t2/insert-returning-pks! (t2/table-name Collection) {:name "Amazing collection"
                                                                                        :slug "amazing_collection"
@@ -1202,7 +1202,8 @@
         (testing "should drop the existing color column"
           (is (not (contains? (t2/select-one :model/Collection :id collection-id) :color))))
 
-        (db.setup/migrate! db-type data-source :down 47)
+        ;;(db.setup/migrate! db-type data-source :down 47)
+        (db.setup/migrate! db-type data-source :down "v48.00-018")
         (testing "Rollback to the previous version should restore the column column, and set the default color value"
           (is (= "#31698A" (:color (t2/select-one :model/Collection :id collection-id)))))))))
 

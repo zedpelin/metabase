@@ -286,7 +286,8 @@
 
   ;; with explicit target version
   ([db-type conn ^Liquibase liquibase target-version]
-   (when (or (not (integer? target-version)) (< target-version 44))
+   (when-not (or (and (integer? target-version) (<= 44 target-version))
+                 (<= 44 (first (extract-numbers target-version))))
      (throw (IllegalArgumentException.
              (format "target version must be a number between 44 and the previous major version (%d), inclusive"
                      (current-major-version)))))
@@ -295,6 +296,9 @@
                                  (changelog-table-name db-type))
          changeset-ids   (map :id (jdbc/query {:connection conn} [changeset-query]))
          ;; IDs in changesets do not include the leading 0/1 digit, so the major version is the first number
-         ids-to-drop     (drop-while #(not= (inc target-version) (first (extract-numbers %))) changeset-ids)]
-     (log/infof "Rolling back app database schema to version %d" target-version)
+         ids-to-drop     (if (integer? target-version)
+                           (drop-while #(not= (inc target-version) (first (extract-numbers %))) changeset-ids)
+                           (drop-while #(<= 0 (compare target-version %)) changeset-ids))]
+     (log/infof "Rolling back app database schema to version %s (%d migrations to drop, from %s to %s)"
+                target-version (count ids-to-drop) (last ids-to-drop) (first ids-to-drop))
      (.rollback liquibase (count ids-to-drop) ""))))
