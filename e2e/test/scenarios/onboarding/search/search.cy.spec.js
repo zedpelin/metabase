@@ -504,6 +504,7 @@ describe("scenarios > search", () => {
         cy.findByTestId("created_by-search-filter").within(() => {
           cy.findByText("Robert Tableton").should("exist");
           cy.findByLabelText("close icon").click();
+          cy.findByText("Robert Tableton").should("not.exist");
         });
 
         expectSearchResultItemNameContent({
