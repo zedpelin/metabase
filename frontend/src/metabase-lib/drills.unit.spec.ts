@@ -72,6 +72,7 @@ type AvailableDrillsTestCase = BaseTestCase & {
 
 type DrillDisplayInfoTestCase = BaseTestCase & {
   drillType: Lib.DrillThruType;
+  customColumns?: Record<string, DatasetColumn>;
   expectedParameters: Lib.DrillThruDisplayInfo;
 };
 
@@ -1178,6 +1179,108 @@ describe("availableDrillThrus", () => {
         type: "drill-thru/zoom-in.timeseries",
       },
     },
+    {
+      drillType: "drill-thru/zoom-in.timeseries",
+      clickType: "cell",
+      queryType: "aggregated",
+      columnName: "sum",
+      customQuestion: Question.create({
+        metadata: SAMPLE_METADATA,
+        dataset_query: {
+          ...AGGREGATED_ORDERS_DATASET_QUERY,
+          query: {
+            ...AGGREGATED_ORDERS_DATASET_QUERY.query,
+            breakout: [
+              [
+                "field",
+                ORDERS.PRODUCT_ID,
+                {
+                  "base-type": "type/Integer",
+                },
+              ],
+              [
+                "field",
+                ORDERS.CREATED_AT,
+                {
+                  "base-type": "type/DateTime",
+                  "temporal-unit": "year",
+                },
+              ],
+            ],
+          },
+        },
+      }),
+      customColumns: {
+        ...AGGREGATED_ORDERS_COLUMNS,
+        CREATED_AT: createOrdersCreatedAtDatasetColumn({
+          source: "breakout",
+          field_ref: [
+            "field",
+            ORDERS.CREATED_AT,
+            {
+              "base-type": "type/DateTime",
+              "temporal-unit": "year",
+            },
+          ],
+          unit: "year",
+        }),
+      },
+      expectedParameters: {
+        displayName: "See this year by quarter",
+        type: "drill-thru/zoom-in.timeseries",
+      },
+    },
+    {
+      drillType: "drill-thru/zoom-in.timeseries",
+      clickType: "cell",
+      queryType: "aggregated",
+      columnName: "count",
+      customQuestion: Question.create({
+        metadata: SAMPLE_METADATA,
+        dataset_query: {
+          ...AGGREGATED_ORDERS_DATASET_QUERY,
+          query: {
+            ...AGGREGATED_ORDERS_DATASET_QUERY.query,
+            breakout: [
+              [
+                "field",
+                ORDERS.PRODUCT_ID,
+                {
+                  "base-type": "type/Integer",
+                },
+              ],
+              [
+                "field",
+                ORDERS.CREATED_AT,
+                {
+                  "base-type": "type/DateTime",
+                  "temporal-unit": "week",
+                },
+              ],
+            ],
+          },
+        },
+      }),
+      customColumns: {
+        ...AGGREGATED_ORDERS_COLUMNS,
+        CREATED_AT: createOrdersCreatedAtDatasetColumn({
+          source: "breakout",
+          field_ref: [
+            "field",
+            ORDERS.CREATED_AT,
+            {
+              "base-type": "type/DateTime",
+              "temporal-unit": "week",
+            },
+          ],
+          unit: "week",
+        }),
+      },
+      expectedParameters: {
+        displayName: "See this week by day",
+        type: "drill-thru/zoom-in.timeseries",
+      },
+    },
     // endregion
 
     // region --- drill-thru/zoom
@@ -1289,6 +1392,7 @@ describe("availableDrillThrus", () => {
       queryType,
       queryTable = "ORDERS",
       customQuestion,
+      customColumns,
       expectedParameters,
     }) => {
       const { drillDisplayInfo } =
@@ -1299,6 +1403,7 @@ describe("availableDrillThrus", () => {
               queryType,
               columnName,
               customQuestion,
+              customColumns,
             })
           : setupDrillDisplayInfoWithOrdersQuery({
               drillType,
@@ -1306,6 +1411,7 @@ describe("availableDrillThrus", () => {
               queryType,
               columnName,
               customQuestion,
+              customColumns,
             });
 
       expect(drillDisplayInfo).toEqual(expectedParameters);
@@ -2306,26 +2412,27 @@ function setupAvailableDrillsWithOrdersQuery({
   queryType,
   columnName,
   customQuestion,
+  customColumns,
 }: {
   clickType: "cell" | "header";
   queryType: TestCaseQueryType;
   columnName: string;
   customQuestion?: Question;
-  debug?: boolean;
+  customColumns?: Record<string, DatasetColumn>;
 }) {
   const { query, stageIndex, column, cellValue, row } = setup(
     queryType === "unaggregated"
       ? {
           question: customQuestion || ORDERS_QUESTION,
           clickedColumnName: columnName,
-          columns: ORDERS_COLUMNS,
+          columns: customColumns || ORDERS_COLUMNS,
           rowValues: ORDERS_ROW_VALUES,
           tableName: "ORDERS",
         }
       : {
           question: customQuestion || AGGREGATED_ORDERS_QUESTION,
           clickedColumnName: columnName,
-          columns: AGGREGATED_ORDERS_COLUMNS,
+          columns: customColumns || AGGREGATED_ORDERS_COLUMNS,
           rowValues: AGGREGATED_ORDERS_ROW_VALUES,
           tableName: "ORDERS",
         },
@@ -2353,12 +2460,14 @@ function setupDrillDisplayInfoWithOrdersQuery({
   queryType,
   columnName,
   customQuestion,
+  customColumns,
 }: {
   drillType: Lib.DrillThruType;
   clickType: "cell" | "header";
   queryType: TestCaseQueryType;
   columnName: string;
   customQuestion?: Question;
+  customColumns?: Record<string, DatasetColumn>;
 }) {
   const { drills, drillsDisplayInfo, query, stageIndex } =
     setupAvailableDrillsWithOrdersQuery({
@@ -2366,6 +2475,7 @@ function setupDrillDisplayInfoWithOrdersQuery({
       queryType,
       columnName,
       customQuestion,
+      customColumns,
     });
 
   const drillIndex = drillsDisplayInfo.findIndex(
@@ -2391,26 +2501,27 @@ function setupAvailableDrillsWithProductsQuery({
   queryType,
   columnName,
   customQuestion,
+  customColumns,
 }: {
   clickType: "cell" | "header";
   queryType: TestCaseQueryType;
   columnName: string;
   customQuestion?: Question;
-  debug?: boolean;
+  customColumns?: Record<string, DatasetColumn>;
 }) {
   const { query, stageIndex, column, cellValue, row } = setup(
     queryType === "unaggregated"
       ? {
           question: customQuestion || PRODUCTS_QUESTION,
           clickedColumnName: columnName,
-          columns: PRODUCTS_COLUMNS,
+          columns: customColumns || PRODUCTS_COLUMNS,
           rowValues: PRODUCTS_ROW_VALUES,
           tableName: "PRODUCTS",
         }
       : {
           question: customQuestion || AGGREGATED_PRODUCTS_QUESTION,
           clickedColumnName: columnName,
-          columns: AGGREGATED_PRODUCTS_COLUMNS,
+          columns: customColumns || AGGREGATED_PRODUCTS_COLUMNS,
           rowValues: AGGREGATED_PRODUCTS_ROW_VALUES,
           tableName: "PRODUCTS",
         },
@@ -2438,13 +2549,14 @@ function setupDrillDisplayInfoWithProductsQuery({
   queryType,
   columnName,
   customQuestion,
+  customColumns,
 }: {
   drillType: Lib.DrillThruType;
   clickType: "cell" | "header";
   queryType: TestCaseQueryType;
   columnName: string;
   customQuestion?: Question;
-  debug?: boolean;
+  customColumns?: Record<string, DatasetColumn>;
 }) {
   const { drills, drillsDisplayInfo, query, stageIndex } =
     setupAvailableDrillsWithProductsQuery({
@@ -2452,6 +2564,7 @@ function setupDrillDisplayInfoWithProductsQuery({
       queryType,
       columnName,
       customQuestion,
+      customColumns,
     });
 
   const drillIndex = drillsDisplayInfo.findIndex(

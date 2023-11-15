@@ -28,10 +28,16 @@ import type {
   Filter,
   Series,
   StructuredDatasetQuery,
+  RowValue,
+  DatasetColumn,
 } from "metabase-types/api";
 import registerVisualizations from "metabase/visualizations/register";
 import { POPOVER_TEST_ID } from "metabase/visualizations/click-actions/actions/ColumnFormattingAction/ColumnFormattingAction";
-import { createMockSingleSeries } from "metabase-types/api/mocks";
+import {
+  createMockColumn,
+  createMockSingleSeries,
+} from "metabase-types/api/mocks";
+
 import type { ClickObject } from "metabase-lib/queries/drills/types";
 import { DEFAULT_QUERY, SAMPLE_METADATA } from "metabase-lib/test-helpers";
 import Question from "metabase-lib/Question";
@@ -52,6 +58,121 @@ const ORDERS_ROW_VALUES = {
   DISCOUNT: 6.416679208849759,
   CREATED_AT: "2025-12-06T22:22:48.544+02:00",
   QUANTITY: 2,
+};
+
+const AGGREGATED_ORDERS_DATASET_QUERY: StructuredDatasetQuery = {
+  type: "query",
+  database: SAMPLE_DB_ID,
+  query: {
+    "source-table": ORDERS_ID,
+    aggregation: [
+      ["count"],
+      [
+        "sum",
+        [
+          "field",
+          ORDERS.TAX,
+          {
+            "base-type": "type/Float",
+          },
+        ],
+      ],
+      [
+        "max",
+        [
+          "field",
+          ORDERS.DISCOUNT,
+          {
+            "base-type": "type/Float",
+          },
+        ],
+      ],
+    ],
+    breakout: [
+      [
+        "field",
+        ORDERS.PRODUCT_ID,
+        {
+          "base-type": "type/Integer",
+        },
+      ],
+      [
+        "field",
+        ORDERS.CREATED_AT,
+        {
+          "base-type": "type/DateTime",
+          "temporal-unit": "month",
+        },
+      ],
+    ],
+  },
+};
+const AGGREGATED_ORDERS_QUESTION = Question.create({
+  metadata: SAMPLE_METADATA,
+  dataset_query: AGGREGATED_ORDERS_DATASET_QUERY,
+});
+const AGGREGATED_ORDERS_COLUMNS_MAP = {
+  PRODUCT_ID: createOrdersProductIdDatasetColumn({
+    source: "breakout",
+    field_ref: [
+      "field",
+      ORDERS.PRODUCT_ID,
+      {
+        "base-type": "type/Integer",
+      },
+    ],
+  }),
+  CREATED_AT: createOrdersCreatedAtDatasetColumn({
+    source: "breakout",
+    field_ref: [
+      "field",
+      ORDERS.CREATED_AT,
+      {
+        "base-type": "type/DateTime",
+        "temporal-unit": "month",
+      },
+    ],
+    unit: "month",
+  }),
+
+  count: createMockColumn({
+    base_type: "type/BigInteger",
+    name: "count",
+    display_name: "Count",
+    semantic_type: "type/Quantity",
+    source: "aggregation",
+    field_ref: ["aggregation", 0],
+    effective_type: "type/BigInteger",
+  }),
+
+  sum: createMockColumn({
+    base_type: "type/Float",
+    name: "sum",
+    display_name: "Sum of Tax",
+    source: "aggregation",
+    field_ref: ["aggregation", 1],
+    effective_type: "type/Float",
+  }),
+
+  max: createMockColumn({
+    base_type: "type/Float",
+    name: "max",
+    display_name: "Max of Discount",
+    source: "aggregation",
+    field_ref: ["aggregation", 2],
+    effective_type: "type/Float",
+  }),
+};
+const AGGREGATED_ORDERS_COLUMNS = Object.values(AGGREGATED_ORDERS_COLUMNS_MAP);
+const AGGREGATED_ORDERS_ROW_VALUES: Record<
+  keyof typeof AGGREGATED_ORDERS_COLUMNS_MAP,
+  RowValue
+> = {
+  PRODUCT_ID: 3,
+  CREATED_AT: "2022-12-01T00:00:00+02:00",
+  count: 77,
+  sum: 1,
+  max: null,
 };
 
 describe("ClickActionsPopover", function () {
@@ -362,6 +483,109 @@ describe("ClickActionsPopover", function () {
         },
       );
     });
+
+    describe("ZoomTimeseriesDrill", () => {
+      it.each([
+        {
+          column: AGGREGATED_ORDERS_COLUMNS_MAP.CREATED_AT,
+          columnName: AGGREGATED_ORDERS_COLUMNS_MAP.CREATED_AT.name,
+          cellValue: AGGREGATED_ORDERS_ROW_VALUES.CREATED_AT,
+          drillTitle: "See this month by week",
+          expectedCard: {
+            dataset_query: {
+              ...AGGREGATED_ORDERS_DATASET_QUERY,
+              query: {
+                ...AGGREGATED_ORDERS_DATASET_QUERY.query,
+                breakout: [
+                  [
+                    "field",
+                    ORDERS.PRODUCT_ID,
+                    {
+                      "base-type": "type/Integer",
+                    },
+                  ],
+                  [
+                    "field",
+                    ORDERS.CREATED_AT,
+                    {
+                      "base-type": "type/DateTime",
+                      "temporal-unit": "week",
+                    },
+                  ],
+                ],
+              },
+            },
+            display: "table",
+          },
+        },
+        {
+          column: AGGREGATED_ORDERS_COLUMNS_MAP.count,
+          columnName: AGGREGATED_ORDERS_COLUMNS_MAP.count.name,
+          cellValue: AGGREGATED_ORDERS_ROW_VALUES.count,
+          drillTitle: "See this month by week",
+          expectedCard: {
+            dataset_query: {
+              ...AGGREGATED_ORDERS_DATASET_QUERY,
+              query: {
+                ...AGGREGATED_ORDERS_DATASET_QUERY.query,
+                filter: [
+                  "=",
+                  [
+                    "field",
+                    AGGREGATED_ORDERS_COLUMNS_MAP.CREATED_AT.id,
+                    { "base-type": "type/DateTime", "temporal-unit": "month" },
+                  ],
+                  AGGREGATED_ORDERS_ROW_VALUES.CREATED_AT,
+                ],
+                breakout: [
+                  [
+                    "field",
+                    ORDERS.PRODUCT_ID,
+                    {
+                      "base-type": "type/Integer",
+                    },
+                  ],
+                  [
+                    "field",
+                    ORDERS.CREATED_AT,
+                    {
+                      "base-type": "type/DateTime",
+                      "temporal-unit": "week",
+                    },
+                  ],
+                ],
+              },
+            },
+            display: "table",
+          },
+        },
+      ])(
+        "should apply drill on $columnName cell click",
+        async ({ column, cellValue, drillTitle, expectedCard }) => {
+          const { props } = await setup({
+            question: AGGREGATED_ORDERS_QUESTION,
+            clicked: {
+              column,
+              value: cellValue,
+            },
+            columns: AGGREGATED_ORDERS_COLUMNS,
+            rowValues: AGGREGATED_ORDERS_ROW_VALUES,
+          });
+
+          const drill = screen.getByText(drillTitle);
+          expect(drill).toBeInTheDocument();
+
+          userEvent.click(drill);
+
+          expect(props.onChangeCardAndRun).toHaveBeenCalledTimes(1);
+          expect(props.onChangeCardAndRun).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+              nextCard: expect.objectContaining(expectedCard),
+            }),
+          );
+        },
+      );
+    });
   });
 });
 
@@ -376,11 +600,15 @@ async function setup({
   },
   settings = {},
   dimension: inputDimension,
+  columns = ORDERS_COLUMNS,
+  rowValues = ORDERS_ROW_VALUES,
 }: Partial<{
   question: Question;
   clicked: ClickObject | undefined;
   settings: Record<string, any>;
   dimension?: Dimension;
+  columns?: DatasetColumn[];
+  rowValues?: Record<string, RowValue>;
 }> = {}) {
   const mode = checkNotNull(getMode(question));
 
@@ -390,15 +618,32 @@ async function setup({
       checkNotNull(clicked?.column),
     );
 
+  const clickedData = columns?.map(column => ({
+    col: column,
+    value: rowValues[column.name],
+  }));
+
+  const hasAggregations = (
+    question?.query() as StructuredQuery
+  ).canRemoveAggregation();
+  const dimensions = hasAggregations
+    ? clickedData
+        .filter(
+          ({ col }) =>
+            col?.source === "breakout" && col?.name !== clicked?.column?.name,
+        )
+        .map(({ value, col }) => ({ value, column: col }))
+    : undefined;
+
   clicked = {
     ...clicked,
     dimension: dimension || undefined,
+    data: clickedData,
+    dimensions,
   };
 
   const clickActions = mode.actionsForClick(
-    {
-      ...clicked,
-    },
+    clicked,
     settings,
   ) as RegularClickAction[];
 
@@ -415,12 +660,12 @@ async function setup({
       },
       {
         data: {
-          cols: [...ORDERS_COLUMNS],
+          cols: [...columns],
           rows: [],
           requested_timezone: "UTC",
           results_timezone: "Asia/Nicosia",
           results_metadata: {
-            columns: [...ORDERS_COLUMNS],
+            columns: [...columns],
           },
         },
       },
