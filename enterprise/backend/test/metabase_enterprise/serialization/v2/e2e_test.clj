@@ -5,17 +5,20 @@
    [medley.core :as m]
    [metabase-enterprise.serialization.cmd :as cmd]
    [metabase-enterprise.serialization.test-util :as ts]
+   [metabase-enterprise.serialization.v2.backfill-ids :as serdes.backfill]
+   [metabase-enterprise.serialization.v2.entity-ids :as v2.entity-ids]
    [metabase-enterprise.serialization.v2.extract :as extract]
    [metabase-enterprise.serialization.v2.ingest :as ingest]
    [metabase-enterprise.serialization.v2.load :as serdes.load]
+   [metabase-enterprise.serialization.v2.models :as serdes.models]
    [metabase-enterprise.serialization.v2.storage :as storage]
    [metabase.models :refer [Card
                             Collection
                             Dashboard
                             DashboardCard
                             Database
-                            ParameterCard
                             Field
+                            ParameterCard
                             Table]]
    [metabase.models.action :as action]
    [metabase.models.serialization :as serdes]
@@ -27,9 +30,9 @@
    [reifyhealth.specmonstah.core :as rs]
    [toucan2.core :as t2]
    [toucan2.tools.with-temp :as t2.with-temp])
- (:import
-  (java.io File)
-  (java.nio.file Path)))
+  (:import
+   (java.io File)
+   (java.nio.file Path)))
 
 (set! *warn-on-reflection* true)
 
@@ -735,3 +738,25 @@
                     (is (thrown-with-msg? Exception #"Please upgrade"
                                           (cmd/v2-load! dump-dir {}))
                         "throws")))))))))))
+
+(deftest every-model-is-supported-test
+  (testing "Serialization support\n"
+    (testing "We know about every model"
+      (is (= (set (concat serdes.models/exported-models
+                          serdes.models/inlined-models
+                          serdes.models/excluded-models))
+             (set (map name (v2.entity-ids/toucan-models))))))
+
+    (let [should-have-entity-id (set (concat serdes.models/data-model serdes.models/content))]
+      (doseq [model (v2.entity-ids/toucan-models)]
+        (if (contains? should-have-entity-id (name model))
+          (testing (str "Model either has entity_id or a hash key: " (name model))
+            ;; `not=` is effectively `xor`
+            (is (not= (not= (get-method serdes/entity-id (name model))
+                            (get-method serdes/entity-id :default))
+                      (and (not= (get-method serdes/hash-fields model)
+                                 (get-method serdes/hash-fields :default))
+                           (serdes.backfill/has-entity-id? model)))))
+          (testing (str "Model shouldn't have entity_id defined: " (name model))
+            (is (= (get-method serdes/entity-id (name model))
+                   (get-method serdes/entity-id :default)))))))))
