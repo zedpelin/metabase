@@ -259,6 +259,7 @@ describe("scenarios > models metadata", () => {
       .and("not.contain", "TAX");
 
     cy.reload();
+    cy.wait("@dataset");
     questionInfoButton().click();
 
     rightSidebar().within(() => {
@@ -266,7 +267,7 @@ describe("scenarios > models metadata", () => {
       cy.findAllByTestId("question-revert-button").first().click();
     });
 
-    cy.wait("@revert");
+    cy.wait(["@revert", "@cardQuery"]);
     cy.findAllByTestId("header-cell")
       .should("contain", "Subtotal ($)")
       .and("not.contain", "Tax ($)")
