@@ -350,40 +350,43 @@ const buildMetricsAxes = (
   const hasLeftAxis = leftFormatter != null && leftExtent != null;
   const hasRightAxis = rightFormatter != null && rightExtent != null;
 
-  return [
-    ...(hasLeftAxis
-      ? [
-          buildMetricAxis(
-            settings,
-            "left",
-            leftRange,
-            leftExtent,
-            leftFormatter,
-            settings["graph.y_axis.labels_enabled"]
-              ? settings["graph.y_axis.title_text"] ??
-                  chartModel.leftAxisColumn?.display_name
-              : undefined,
-            renderingContext,
-          ),
-        ]
-      : []),
-    ...(hasRightAxis
-      ? [
-          buildMetricAxis(
-            settings,
-            "right",
-            rightRange,
-            rightExtent,
-            rightFormatter,
-            settings["graph.y_axis.labels_enabled"]
-              ? settings["graph.y_axis.title_text"] ??
-                  chartModel.rightAxisColumn?.display_name
-              : undefined,
-            renderingContext,
-          ),
-        ]
-      : []),
-  ];
+  const axes: CartesianAxisOption[] = [];
+
+  if (hasLeftAxis) {
+    axes.push(
+      buildMetricAxis(
+        settings,
+        "left",
+        leftRange,
+        leftExtent,
+        leftFormatter,
+        settings["graph.y_axis.labels_enabled"]
+          ? settings["graph.y_axis.title_text"] ??
+              chartModel.leftAxisColumn?.display_name
+          : undefined,
+        renderingContext,
+      ),
+    );
+  }
+
+  if (hasRightAxis) {
+    axes.push(
+      buildMetricAxis(
+        settings,
+        "right",
+        rightRange,
+        rightExtent,
+        rightFormatter,
+        settings["graph.y_axis.labels_enabled"]
+          ? settings["graph.y_axis.title_text"] ??
+              chartModel.rightAxisColumn?.display_name
+          : undefined,
+        renderingContext,
+      ),
+    );
+  }
+
+  return axes;
 };
 
 export const buildAxes = (
