@@ -12,6 +12,7 @@
    [malli.core :as mc]
    [metabase.config :as config]
    [metabase.db.query :as mdb.query]
+   [metabase.driver :as driver]
    [metabase.lib.schema.id :as lib.schema.id]
    [metabase.models.database :as database :refer [Database]]
    [metabase.models.interface :as mi]
@@ -72,6 +73,23 @@
          end-time
          (< (.toMinutes (t/duration start-time end-time)) analyze-duration-threshold-for-refingerprinting))))
 
+(defn- sync-and-analyze-database!*
+  [database-id]
+  (log/info (trs "Starting sync task for Database {0}." database-id))
+  (when-let [database (or (t2/select-one Database :id database-id)
+                          (do
+                            (unschedule-tasks-for-db! (mi/instance Database {:id database-id}))
+                            (log/warn (trs "Cannot sync Database {0}: Database does not exist." database-id))))]
+    (if (driver/fails-connection-check? (:engine database) database)
+      (log/warn (str "Cannot sync Database {0}: No database found with name {1}" database-id (:name database)))
+      (do
+        (sync-metadata/sync-db-metadata! database)
+          ;; only run analysis if this is a "full sync" database
+        (when (:is_full_sync database)
+          (let [results (analyze/analyze-db! database)]
+            (when (and (:refingerprint database) (should-refingerprint-fields? results))
+              (analyze/refingerprint-db! database))))))))
+
 (defn- sync-and-analyze-database!
   "The sync and analyze database job, as a function that can be used in a test"
   [job-context]
@@ -84,18 +102,7 @@
                           {:database-id database-id
                            :raw-job-context job-context
                            :job-context (pr-str job-context)}))))
-      (do
-        (log/info (trs "Starting sync task for Database {0}." database-id))
-        (when-let [database (or (t2/select-one Database :id database-id)
-                                (do
-                                  (unschedule-tasks-for-db! (mi/instance Database {:id database-id}))
-                                  (log/warn (trs "Cannot sync Database {0}: Database does not exist." database-id))))]
-          (sync-metadata/sync-db-metadata! database)
-          ;; only run analysis if this is a "full sync" database
-          (when (:is_full_sync database)
-            (let [results (analyze/analyze-db! database)]
-              (when (and (:refingerprint database) (should-refingerprint-fields? results))
-                (analyze/refingerprint-db! database)))))))))
+      (sync-and-analyze-database!* database-id))))
 
 (jobs/defjob ^{org.quartz.DisallowConcurrentExecution true
                :doc "Sync and analyze the database"}

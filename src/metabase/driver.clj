@@ -307,6 +307,16 @@
   dispatch-on-initialized-driver
   :hierarchy #'hierarchy)
 
+(defmulti fails-connection-check?
+  "Checks a connection is alive"
+  {:added "0.49.0" :arglists '([driver database])}
+  dispatch-on-initialized-driver
+  :hierarchy #'hierarchy)
+
+(defmethod fails-connection-check? :default
+  [_ _]
+  nil)
+
 (defmulti describe-table
   "Return a map containing information that describes the physical schema of `table` (i.e. the fields contained
   therein). `database` will be an instance of the `Database` model; and `table`, an instance of the `Table` model. It

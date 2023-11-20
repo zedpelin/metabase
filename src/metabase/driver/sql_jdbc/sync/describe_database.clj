@@ -17,7 +17,8 @@
    [metabase.util.honeysql-extensions :as hx]
    [metabase.util.log :as log]
    [metabase.util.malli :as mu]
-   [metabase.util.malli.schema :as ms])
+   [metabase.util.malli.schema :as ms]
+   [toucan2.util :as u])
   (:import
    (java.sql Connection DatabaseMetaData ResultSet)))
 
@@ -158,6 +159,24 @@
 
         :else
         nil))
+
+(defn fails-connection-check?
+  "Default implementation of [[metabase.driver/fails-connection-check?]]"
+  [driver database]
+  (sql-jdbc.execute/do-with-connection-with-options
+   driver
+   database
+   nil
+   (fn [^Connection conn]
+     (let [db (db-or-id-or-spec->database database)
+           ;; get the catalog names from the metadata
+           result-set (.getCatalogs (.getMetaData conn))
+           database-names (loop [acc #{}]
+                            (if (.next result-set)
+                              (let [database-name (.getString result-set 1)]
+                                (recur (conj acc database-name)))
+                              acc))]
+       (not (contains? (set (map u/lower-case-en database-names)) (u/lower-case-en (:name db))))))))
 
 (mu/defn describe-database
   "Default implementation of [[metabase.driver/describe-database]] for SQL JDBC drivers. Uses JDBC DatabaseMetaData."

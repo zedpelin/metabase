@@ -9,6 +9,7 @@
    [metabase.driver.sql-jdbc.connection :as sql-jdbc.conn]
    [metabase.driver.sql-jdbc.execute :as sql-jdbc.execute]
    [metabase.driver.sql-jdbc.sync :as sql-jdbc.sync]
+   [metabase.driver.sql-jdbc.sync.describe-database :as sql-jdbc.describe-database]
    [metabase.driver.sql-jdbc.sync.interface :as sql-jdbc.sync.interface]
    [metabase.driver.sql.query-processor :as sql.qp]
    [metabase.driver.sync :as driver.s]
@@ -92,6 +93,10 @@
 (defmethod driver/describe-database :sql-jdbc
   [driver database]
   (sql-jdbc.sync/describe-database driver database))
+
+(defmethod driver/fails-connection-check? :sql-jdbc
+  [driver database]
+  (sql-jdbc.describe-database/fails-connection-check? driver database))
 
 (defmethod driver/describe-table :sql-jdbc
   [driver database table]

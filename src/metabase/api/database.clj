@@ -984,6 +984,8 @@
   (let [db (api/write-check (t2/select-one Database :id id))]
     (events/publish-event! :event/database-manual-sync {:object db :user-id api/*current-user-id*})
     (future
+      (when (driver/fails-connection-check? (:engine db) db)
+        (log/error (format "Failed to connect to database %d %s" (:id db) (:name db))))
       (sync-metadata/sync-db-metadata! db)
       (analyze/analyze-db! db)))
   {:status :ok})

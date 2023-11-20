@@ -1,12 +1,18 @@
 (ns metabase.driver-test
   (:require
    [cheshire.core :as json]
+   [clojure.java.jdbc :as jdbc]
    [clojure.test :refer :all]
    [metabase.driver :as driver]
    [metabase.driver.impl :as driver.impl]
+   [metabase.driver.sql-jdbc.connection :as sql-jdbc.conn]
    [metabase.plugins.classloader :as classloader]
+   [metabase.sync :as sync]
    [metabase.test :as mt]
-   [metabase.test.data.env :as tx.env]))
+   [metabase.test.data.env :as tx.env]
+   [metabase.test.data.interface :as tx]
+   [metabase.util :as u]
+   [toucan2.core :as t2]))
 
 (set! *warn-on-reflection* true)
 
@@ -67,6 +73,32 @@
         (is (nil? (->> (driver/describe-database driver/*driver* (mt/db))
                        :tables
                        (some :schema))))))))
+
+(deftest check-for-database-connection-before-sync-test
+  (testing "Database sync should short-circuit if the database connection is not available"
+    (mt/test-drivers (mt/normal-drivers)
+      (let [;; create a database with a table and sync
+            database-name      (name (gensym))
+            empty-dbdef        {:database-name database-name}
+            _                  (tx/create-db! driver/*driver* empty-dbdef)
+            connection-details (tx/dbdef->connection-details driver/*driver* :db empty-dbdef)
+            db                 (first (t2/insert-returning-instances! :model/Database {:name    database-name
+                                                                                       :engine  (u/qualified-name driver/*driver*)
+                                                                                       :details connection-details}))
+            conn-spec (sql-jdbc.conn/db->pooled-connection-spec db)]
+        (jdbc/execute! conn-spec ["create table foo (id int)"])
+        (sync/sync-database! db)
+        (testing "sense check: the table should exist on initial sync"
+          (is (true? (t2/exists? :model/Table :db_id (:id db)))))
+        ;; delete the db
+        (tx/destroy-db! driver/*driver* empty-dbdef)
+        (testing "`describe-database` should throw with a destroyed DB"
+          (is (thrown-with-msg?
+                Exception
+                #"Could not connect to (.*)"
+                (sync/sync-database! db))))
+        ;; clean up the database
+        (t2/delete! :model/Database :id (:id db))))))
 
 (deftest supports-table-privileges-matches-implementations-test
   (mt/test-drivers (mt/normal-drivers-with-feature :table-privileges)
