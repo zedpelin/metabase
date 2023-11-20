@@ -35,7 +35,7 @@ describe("fetchDashboard", () => {
     setupDashboardEndpoints(createMockDashboard({ id: 2 }));
   });
 
-  it("should cancel previous dashboard fetch when a new one is initiated", async () => {
+  it("should cancel previous dashboard fetch when a new one is initiated (metabase#35959)", async () => {
     const firstFetch = store.dispatch(
       fetchDashboard({
         dashId: 1,
