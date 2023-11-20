@@ -3,7 +3,11 @@ import { getIn } from "icepick";
 import { t } from "ttag";
 
 import { denormalize, normalize, schema } from "normalizr";
-import { createAction, createThunkAction } from "metabase/lib/redux";
+import {
+  createAction,
+  createAsyncThunk,
+  createThunkAction,
+} from "metabase/lib/redux";
 import { defer } from "metabase/lib/promise";
 
 import { getDashboardUiParameters } from "metabase/parameters/utils/dashboards";
@@ -54,8 +58,6 @@ const dashcard = new schema.Entity("dashcard");
 const dashboard = new schema.Entity("dashboard", {
   dashcards: [dashcard],
 });
-
-export const FETCH_DASHBOARD = "metabase/dashboard/FETCH_DASHBOARD";
 
 export const FETCH_DASHBOARD_CARD_DATA =
   "metabase/dashboard/FETCH_DASHBOARD_CARD_DATA";
@@ -138,120 +140,139 @@ const loadingComplete = createThunkAction(
   },
 );
 
-export const fetchDashboard = createThunkAction(
-  FETCH_DASHBOARD,
-  function (
-    dashId,
-    queryParams,
-    { preserveParameters = false, clearCache = true } = {},
-  ) {
+let fetchDashboardCancellation;
+
+export const fetchDashboard = createAsyncThunk(
+  "metabase/dashboard/FETCH_DASHBOARD",
+  async (
+    {
+      dashId,
+      queryParams,
+      options: { preserveParameters = false, clearCache = true },
+    },
+    { getState, dispatch },
+  ) => {
+    if (fetchDashboardCancellation) {
+      fetchDashboardCancellation.resolve();
+    }
+    fetchDashboardCancellation = defer();
+
     let entities;
     let result;
-    return async function (dispatch, getState) {
-      const dashboardType = getDashboardType(dashId);
-      const loadedDashboard = getDashboardById(getState(), dashId);
 
-      if (!clearCache && loadedDashboard) {
-        entities = {
-          dashboard: { [dashId]: loadedDashboard },
-          dashcard: Object.fromEntries(
-            loadedDashboard.dashcards.map(id => [
-              id,
-              getDashCardById(getState(), id),
-            ]),
-          ),
-        };
-        result = denormalize(dashId, dashboard, entities);
-      } else if (dashboardType === "public") {
-        result = await PublicApi.dashboard({ uuid: dashId });
-        result = {
-          ...result,
-          id: dashId,
-          dashcards: result.dashcards.map(dc => ({
-            ...dc,
-            dashboard_id: dashId,
-          })),
-        };
-      } else if (dashboardType === "embed") {
-        result = await EmbedApi.dashboard({ token: dashId });
-        result = {
-          ...result,
-          id: dashId,
-          dashcards: result.dashcards.map(dc => ({
-            ...dc,
-            dashboard_id: dashId,
-          })),
-        };
-      } else if (dashboardType === "transient") {
-        const subPath = dashId.split("/").slice(3).join("/");
-        result = await AutoApi.dashboard({ subPath });
-        result = {
-          ...result,
-          id: dashId,
-          dashcards: result.dashcards.map(dc => ({
-            ...dc,
-            dashboard_id: dashId,
-          })),
-        };
-      } else if (dashboardType === "inline") {
-        // HACK: this is horrible but the easiest way to get "inline" dashboards up and running
-        // pass the dashboard in as dashboardId, and replace the id with [object Object] because
-        // that's what it will be when cast to a string
-        result = expandInlineDashboard(dashId);
-        dashId = result.id = String(dashId);
-      } else {
-        result = await DashboardApi.get({ dashId: dashId });
-      }
+    const dashboardType = getDashboardType(dashId);
+    const loadedDashboard = getDashboardById(getState(), dashId);
 
-      if (dashboardType === "normal" || dashboardType === "transient") {
-        const selectedTabId = getSelectedTabId(getState());
-
-        const cards =
-          selectedTabId === undefined
-            ? result.dashcards
-            : result.dashcards.filter(
-                c => c.dashboard_tab_id === selectedTabId,
-              );
-
-        await dispatch(loadMetadataForDashboard(cards));
-      }
-
-      const isUsingCachedResults = entities != null;
-      if (!isUsingCachedResults) {
-        // copy over any virtual cards from the dashcard to the underlying card/question
-        result.dashcards.forEach(card => {
-          if (card.visualization_settings.virtual_card) {
-            card.card = Object.assign(
-              card.card || {},
-              card.visualization_settings.virtual_card,
-            );
-          }
-        });
-      }
-
-      if (result.param_values) {
-        dispatch(addParamValues(result.param_values));
-      }
-      if (result.param_fields) {
-        dispatch(addFields(result.param_fields));
-      }
-
-      const metadata = getMetadata(getState());
-      const parameters = getDashboardUiParameters(result, metadata);
-
-      const parameterValuesById = preserveParameters
-        ? getParameterValues(getState())
-        : getParameterValuesByIdFromQueryParams(parameters, queryParams);
-
-      entities = entities ?? normalize(result, dashboard).entities;
-
-      return {
-        entities,
-        dashboard: result,
-        dashboardId: dashId,
-        parameterValues: parameterValuesById,
-        preserveParameters,
+    if (!clearCache && loadedDashboard) {
+      entities = {
+        dashboard: { [dashId]: loadedDashboard },
+        dashcard: Object.fromEntries(
+          loadedDashboard.dashcards.map(id => [
+            id,
+            getDashCardById(getState(), id),
+          ]),
+        ),
       };
+      result = denormalize(dashId, dashboard, entities);
+    } else if (dashboardType === "public") {
+      result = await PublicApi.dashboard(
+        { uuid: dashId },
+        { cancelled: fetchDashboardCancellation.promise },
+      );
+      result = {
+        ...result,
+        id: dashId,
+        dashcards: result.dashcards.map(dc => ({
+          ...dc,
+          dashboard_id: dashId,
+        })),
+      };
+    } else if (dashboardType === "embed") {
+      result = await EmbedApi.dashboard(
+        { token: dashId },
+        { cancelled: fetchDashboardCancellation.promise },
+      );
+      result = {
+        ...result,
+        id: dashId,
+        dashcards: result.dashcards.map(dc => ({
+          ...dc,
+          dashboard_id: dashId,
+        })),
+      };
+    } else if (dashboardType === "transient") {
+      const subPath = dashId.split("/").slice(3).join("/");
+      result = await AutoApi.dashboard(
+        { subPath },
+        { cancelled: fetchDashboardCancellation.promise },
+      );
+      result = {
+        ...result,
+        id: dashId,
+        dashcards: result.dashcards.map(dc => ({
+          ...dc,
+          dashboard_id: dashId,
+        })),
+      };
+    } else if (dashboardType === "inline") {
+      // HACK: this is horrible but the easiest way to get "inline" dashboards up and running
+      // pass the dashboard in as dashboardId, and replace the id with [object Object] because
+      // that's what it will be when cast to a string
+      result = expandInlineDashboard(dashId);
+      dashId = result.id = String(dashId);
+    } else {
+      result = await DashboardApi.get(
+        { dashId: dashId },
+        { cancelled: fetchDashboardCancellation.promise },
+      );
+    }
+
+    if (dashboardType === "normal" || dashboardType === "transient") {
+      const selectedTabId = getSelectedTabId(getState());
+
+      const cards =
+        selectedTabId === undefined
+          ? result.dashcards
+          : result.dashcards.filter(c => c.dashboard_tab_id === selectedTabId);
+
+      await dispatch(loadMetadataForDashboard(cards));
+    }
+
+    const isUsingCachedResults = entities != null;
+    if (!isUsingCachedResults) {
+      // copy over any virtual cards from the dashcard to the underlying card/question
+      result.dashcards.forEach(card => {
+        if (card.visualization_settings.virtual_card) {
+          card.card = Object.assign(
+            card.card || {},
+            card.visualization_settings.virtual_card,
+          );
+        }
+      });
+    }
+
+    if (result.param_values) {
+      dispatch(addParamValues(result.param_values));
+    }
+    if (result.param_fields) {
+      dispatch(addFields(result.param_fields));
+    }
+
+    const metadata = getMetadata(getState());
+    const parameters = getDashboardUiParameters(result, metadata);
+
+    const parameterValuesById = preserveParameters
+      ? getParameterValues(getState())
+      : getParameterValuesByIdFromQueryParams(parameters, queryParams);
+
+    entities = entities ?? normalize(result, dashboard).entities;
+
+    return {
+      entities,
+      dashboard: result,
+      dashboardId: dashId,
+      parameterValues: parameterValuesById,
+      preserveParameters,
     };
   },
 );

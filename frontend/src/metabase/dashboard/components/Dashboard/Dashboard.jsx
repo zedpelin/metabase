@@ -185,9 +185,13 @@ class Dashboard extends Component {
     loadDashboardParams();
 
     try {
-      await fetchDashboard(dashboardId, location.query, {
-        clearCache: !isNavigatingBackToDashboard,
-        preserveParameters: isNavigatingBackToDashboard,
+      await fetchDashboard({
+        dashId: dashboardId,
+        queryParams: location.query,
+        options: {
+          clearCache: !isNavigatingBackToDashboard,
+          preserveParameters: isNavigatingBackToDashboard,
+        },
       });
       if (editingOnLoad) {
         this.setEditing(this.props.dashboard);

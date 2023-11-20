@@ -83,7 +83,10 @@ class PublicDashboard extends Component {
 
     initialize();
     try {
-      await fetchDashboard(uuid || token, location.query);
+      await fetchDashboard({
+        dashId: uuid || token,
+        queryParams: location.query,
+      });
       if (this.props.dashboard.tabs.length === 0) {
         await fetchDashboardCardData({ reload: false, clearCache: true });
       }

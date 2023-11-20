@@ -11,7 +11,6 @@ import { NAVIGATE_BACK_TO_DASHBOARD } from "metabase/query_builder/actions";
 
 import {
   INITIALIZE,
-  FETCH_DASHBOARD,
   SET_EDITING_DASHBOARD,
   SET_DASHBOARD_ATTRIBUTES,
   ADD_CARD_TO_DASH,
@@ -45,6 +44,7 @@ import {
   SHOW_AUTO_APPLY_FILTERS_TOAST,
   tabsReducer,
   FETCH_CARD_DATA_PENDING,
+  fetchDashboard,
 } from "./actions";
 import { syncParametersAndEmbeddingParams } from "./utils";
 import { INITIAL_DASHBOARD_STATE } from "./constants";
@@ -52,7 +52,7 @@ import { INITIAL_DASHBOARD_STATE } from "./constants";
 const dashboardId = handleActions(
   {
     [INITIALIZE]: { next: state => null },
-    [FETCH_DASHBOARD]: {
+    [fetchDashboard.fulfilled]: {
       next: (state, { payload: { dashboardId } }) => dashboardId,
     },
     [RESET]: { next: state => null },
@@ -97,7 +97,7 @@ function newDashboard(before, after, isDirty) {
 
 const dashboards = handleActions(
   {
-    [FETCH_DASHBOARD]: {
+    [fetchDashboard.fulfilled]: {
       next: (state, { payload }) => ({
         ...state,
         ...payload.entities.dashboard,
@@ -159,7 +159,7 @@ const dashboards = handleActions(
 
 const dashcards = handleActions(
   {
-    [FETCH_DASHBOARD]: {
+    [fetchDashboard.fulfilled]: {
       next: (state, { payload }) => ({
         ...state,
         ...payload.entities.dashcard,
@@ -316,7 +316,7 @@ const parameterValues = handleActions(
         return clearCache ? {} : state;
       },
     },
-    [FETCH_DASHBOARD]: {
+    [fetchDashboard.fulfilled]: {
       next: (state, { payload: { parameterValues } }) => parameterValues,
     },
     [SET_PARAMETER_VALUE]: {
@@ -345,7 +345,7 @@ const draftParameterValues = handleActions(
         return clearCache ? {} : state;
       },
     },
-    [FETCH_DASHBOARD]: {
+    [fetchDashboard.fulfilled]: {
       next: (
         state,
         { payload: { dashboard, parameterValues, preserveParameters } },
