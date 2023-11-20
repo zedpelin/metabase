@@ -43,6 +43,7 @@ import {
 } from "./DataSelector.styled";
 
 import "./DataSelector.css";
+import { TabbedEntityPicker } from "metabase/components/EntityPicker";
 
 const MIN_SEARCH_LENGTH = 2;
 
@@ -805,44 +806,6 @@ export class UnconnectedDataSelector extends Component {
     await this.nextStep({ selectedFieldId: field?.id });
   };
 
-  getTriggerElement = triggerProps => {
-    const {
-      className,
-      style,
-      triggerIconSize,
-      triggerElement,
-      getTriggerElementContent,
-      hasTriggerExpandControl,
-    } = this.props;
-
-    if (triggerElement) {
-      return triggerElement;
-    }
-
-    const { selectedDatabase, selectedTable, selectedField } = this.state;
-
-    return (
-      <span
-        className={className || "px2 py2 text-bold cursor-pointer text-default"}
-        style={style}
-      >
-        {createElement(getTriggerElementContent, {
-          selectedDatabase,
-          selectedTable,
-          selectedField,
-          ...triggerProps,
-        })}
-        {!this.props.readOnly && hasTriggerExpandControl && (
-          <Icon
-            className="ml1"
-            name="chevrondown"
-            size={triggerIconSize || 8}
-          />
-        )}
-      </span>
-    );
-  };
-
   getTriggerClasses() {
     const { readOnly, triggerClasses, renderAsSelect } = this.props;
     if (triggerClasses) {
@@ -863,66 +826,6 @@ export class UnconnectedDataSelector extends Component {
     }
     this.setState({ isSavedQuestionPickerShown: false });
   };
-
-  renderActiveStep() {
-    const { combineDatabaseSchemaSteps, hasNestedQueriesEnabled } = this.props;
-
-    const props = {
-      ...this.state,
-      databases: this.getDatabases(),
-
-      onChangeDataBucket: this.onChangeDataBucket,
-      onChangeDatabase: this.onChangeDatabase,
-      onChangeSchema: this.onChangeSchema,
-      onChangeTable: this.onChangeTable,
-      onChangeField: this.onChangeField,
-
-      // misc
-      isLoading: this.state.isLoading,
-      hasNextStep: !!this.getNextStep(),
-      onBack: this.getPreviousStep() ? this.previousStep : null,
-      hasFiltering: true,
-      hasInitialFocus: !this.showTableSearch(),
-    };
-
-    switch (this.state.activeStep) {
-      case DATA_BUCKET_STEP:
-        return (
-          <DataBucketPicker
-            dataTypes={getDataTypes({
-              hasModels: this.hasDatasets(),
-              hasNestedQueriesEnabled,
-              hasSavedQuestions: this.hasSavedQuestions(),
-            })}
-            {...props}
-          />
-        );
-      case DATABASE_STEP:
-        return combineDatabaseSchemaSteps ? (
-          <DatabaseSchemaPicker
-            {...props}
-            hasBackButton={this.hasUsableDatasets() && props.onBack}
-          />
-        ) : (
-          <DatabasePicker {...props} />
-        );
-      case SCHEMA_STEP:
-        return combineDatabaseSchemaSteps ? (
-          <DatabaseSchemaPicker
-            {...props}
-            hasBackButton={this.hasUsableDatasets() && props.onBack}
-          />
-        ) : (
-          <SchemaPicker {...props} />
-        );
-      case TABLE_STEP:
-        return <TablePicker {...props} />;
-      case FIELD_STEP:
-        return <FieldPicker {...props} />;
-    }
-
-    return null;
-  }
 
   isSavedQuestionSelected = () => isVirtualCardId(this.props.selectedTableId);
 
@@ -1008,102 +911,22 @@ export class UnconnectedDataSelector extends Component {
     return hasDataAccess || databases?.length > 0;
   };
 
-  renderContent = () => {
-    const {
-      searchText,
-      isSavedQuestionPickerShown,
-      selectedDataBucketId,
-      selectedTable,
-    } = this.state;
-    const { canChangeDatabase, selectedDatabaseId } = this.props;
-
-    const currentDatabaseId = canChangeDatabase ? null : selectedDatabaseId;
-
-    const isSearchActive = searchText.trim().length >= MIN_SEARCH_LENGTH;
-
-    const isPickerOpen =
-      isSavedQuestionPickerShown ||
-      selectedDataBucketId === DATA_BUCKET.DATASETS;
-
-    if (this.isLoadingDatasets()) {
-      return <LoadingAndErrorWrapper loading />;
-    }
-
-    if (this.hasDataAccess()) {
-      return (
-        <>
-          {this.showTableSearch() && (
-            <TableSearchContainer>
-              <ListSearchField
-                fullWidth
-                autoFocus
-                value={searchText}
-                placeholder={this.getSearchInputPlaceholder()}
-                onChange={e => this.handleSearchTextChange(e.target.value)}
-                onResetClick={() => this.handleSearchTextChange("")}
-              />
-            </TableSearchContainer>
-          )}
-          {isSearchActive && (
-            <SearchResults
-              searchModels={this.getSearchModels()}
-              searchQuery={searchText.trim()}
-              databaseId={currentDatabaseId}
-              onSelect={this.handleSearchItemSelect}
-            />
-          )}
-          {!isSearchActive &&
-            (isPickerOpen ? (
-              <SavedQuestionPicker
-                collectionName={
-                  selectedTable &&
-                  selectedTable.schema &&
-                  getSchemaName(selectedTable.schema.id)
-                }
-                isDatasets={selectedDataBucketId === DATA_BUCKET.DATASETS}
-                tableId={selectedTable?.id}
-                databaseId={currentDatabaseId}
-                onSelect={this.handleSavedQuestionSelect}
-                onBack={this.handleSavedQuestionPickerClose}
-              />
-            ) : (
-              this.renderActiveStep()
-            ))}
-        </>
-      );
-    }
-
-    return (
-      <EmptyStateContainer>
-        <EmptyState
-          message={t`To pick some data, you'll need to add some first`}
-          icon="database"
-        />
-      </EmptyStateContainer>
-    );
-  };
 
   render() {
-    if (this.props.isPopover) {
+    if (this.state.isOpen) {
       return (
-        <PopoverWithTrigger
-          id="DataPopover"
-          autoWidth
-          ref={this.popover}
-          isInitiallyOpen={this.props.isInitiallyOpen && !this.props.readOnly}
-          containerClassName={this.props.containerClassName}
-          triggerElement={this.getTriggerElement}
-          triggerClasses={this.getTriggerClasses()}
-          hasArrow={this.props.hasArrow}
-          tetherOptions={this.props.tetherOptions}
-          sizeToFit
-          isOpen={this.props.isOpen}
-          onClose={this.handleClose}
-        >
-          {this.renderContent()}
-        </PopoverWithTrigger>
-      );
+        <TabbedEntityPicker
+          tabs={["question", "table"]}
+          onItemSelect={(item) => {
+            this.handleSearchItemSelect(item);
+            this.setState({ isOpen: false });
+          }}
+        />
+      )
+    } else {
+      return <div onClick={() => this.setState({ isOpen: true })}>
+        {this.props.triggerElement}
+      </div>;
     }
-    return this.renderContent();
   }
 }
