@@ -2,10 +2,13 @@
   (:require
    [clojure.java.io :as io]
    [clojure.test :refer :all]
+   [metabase-enterprise.audit-db :as adb]
    [metabase-enterprise.serialization.cmd :as serialization.cmd]
    [metabase-enterprise.serialization.load :as load]
    [metabase-enterprise.serialization.test-util :as ts]
    [metabase.cmd :as cmd]
+   [metabase.db :as mdb]
+   [metabase.db.schema-migrations-test.impl :as schema-migrations-test.impl]
    [metabase.models :refer [Card Dashboard DashboardCard Database User]]
    [metabase.public-settings.premium-features-test :as premium-features-test]
    [metabase.test :as mt]
@@ -70,13 +73,21 @@
          (spit ~path original#)))))
 
 (deftest loading-does-not-fail-on-extra-yaml-keys
-  (testing "an extra key does not break loading"
-    (premium-features-test/with-premium-features #{:serialization}
-      (is (serialization.cmd/v2-load-internal! "resources/instance_analytics/" {} :token-check? false))
-
+  (premium-features-test/with-premium-features #{:serialization}
+    (testing "it works without an extra key (sanity check)"
+      (schema-migrations-test.impl/with-temp-empty-app-db [_conn :h2]
+        ;; NOTE: this is probably not the ideal way to set things up. It seems that we need to set up the DB and
+        ;; install the audit DB before we run `v2-load-internal`, but this is clearly awkard.
+        (mdb/setup-db!)
+        (#'adb/maybe-install-audit-db)
+        (is (serialization.cmd/v2-load-internal! "resources/instance_analytics/" {} :token-check? false))))
+    (testing "and it works with an extra key"
       (let [path "resources/instance_analytics/collections/vG58R8k-QddHWA7_47umn_metabase_analytics/vG58R8k-QddHWA7_47umn_metabase_analytics.yaml"]
         (with-file-updated [path #(-> % yaml/parse-string (assoc :foo? "bar") yaml/generate-string)]
-          (is (serialization.cmd/v2-load-internal! "resources/instance_analytics/" {} :token-check? false)))))))
+          (schema-migrations-test.impl/with-temp-empty-app-db [_conn :h2]
+            (mdb/setup-db!)
+            (#'adb/maybe-install-audit-db)
+            (is (serialization.cmd/v2-load-internal! "resources/instance_analytics/" {} :token-check? false))))))))
 
 (deftest blank-target-db-test
   (testing "Loading a dump into an empty app DB still works (#16639)"
